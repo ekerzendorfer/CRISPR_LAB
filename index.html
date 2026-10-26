@@ -1,0 +1,2387 @@
+<!DOCTYPE html>
+<html lang="de" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CRISPR-LAB: Präzisionsschere Cas9 vs. DNA-Shredder Cas12a2</title>
+
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace']
+          }
+        }
+      }
+    };
+  </script>
+
+  <!-- 3Dmol.js Primärquelle mit Fallback -->
+  <script src="https://3Dmol.org/build/3Dmol-min.js"></script>
+  <script>
+    if (typeof $3Dmol === 'undefined') {
+      document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/3Dmol/2.4.2/3Dmol-min.js"><\/script>');
+    }
+  </script>
+
+  <style>
+    :root {
+      --bg-canvas: #090d16;
+      --accent-glow: rgba(56, 189, 248, 0.18);
+    }
+    html:not(.dark) {
+      --bg-canvas: #f1f5f9;
+      --accent-glow: rgba(2, 132, 199, 0.12);
+    }
+
+    /* Beamer-Modus für Hörsaal und Klassenraum */
+    html.beamer-mode {
+      font-size: 18.5px;
+    }
+    html.beamer-mode .beamer-card {
+      border-width: 2px !important;
+    }
+
+    /* Sanfte Übergänge für das animierte 2D-Vektor-Schema */
+    .svg-morph {
+      transition: all 0.72s cubic-bezier(0.34, 1.22, 0.64, 1);
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+    .svg-fade {
+      transition: opacity 0.45s ease, transform 0.55s ease;
+    }
+
+    @keyframes pulseSpark {
+      0%, 100% { transform: scale(0.9); opacity: 0.78; }
+      50% { transform: scale(1.18); opacity: 1; }
+    }
+    .spark-anim {
+      animation: pulseSpark 1.15s infinite ease-in-out;
+      transform-box: fill-box;
+      transform-origin: center;
+    }
+
+    @keyframes floatFrag {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-5px) rotate(4deg); }
+    }
+    .frag-anim {
+      animation: floatFrag 2.2s infinite ease-in-out;
+    }
+
+    /* 3Dmol.js Stage */
+    .mol-stage {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: var(--bg-canvas);
+    }
+    .mol-stage canvas {
+      outline: none;
+    }
+
+    /* Dezente Scrollbars */
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #64748b66; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #64748baa; }
+  </style>
+</head>
+
+<body class="bg-slate-50 text-slate-900 dark:bg-slate-950 dark:text-slate-100 font-sans antialiased min-h-screen flex flex-col transition-colors duration-200 selection:bg-sky-500/30">
+
+  <!-- ===================================================================== -->
+  <!-- PERSISTENTE KOPFZEILE MIT 4 STEUER-BUTTONS & 5-MODUL-NAVIGATION       -->
+  <!-- ===================================================================== -->
+  <header class="sticky top-0 z-40 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md shadow-sm">
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 py-3 flex flex-wrap items-center justify-between gap-3">
+      <!-- App-Logo & Titel -->
+      <div class="flex items-center gap-3.5">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-sky-500 via-indigo-600 to-rose-600 p-0.5 shadow-md shrink-0">
+          <div class="w-full h-full rounded-[14px] bg-white dark:bg-slate-950 flex items-center justify-center">
+            <svg class="w-6 h-6 text-sky-600 dark:text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M7 4c4 3 6 5 10 8-4 3-6 5-10 8M17 4c-4 3-6 5-10 8 4 3 6 5 10 8M9.5 6.5h5M9.5 17.5h5"/>
+            </svg>
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <h1 class="text-base sm:text-xl font-extrabold tracking-tight bg-gradient-to-r from-sky-600 via-indigo-500 to-rose-500 dark:from-sky-400 dark:via-indigo-300 dark:to-rose-400 bg-clip-text text-transparent">
+              CRISPR-LAB: Präzisionsschere Cas9 vs. DNA-Shredder Cas12a2
+            </h1>
+            <span class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-100 text-sky-800 dark:bg-sky-500/15 dark:text-sky-300 border border-sky-200 dark:border-sky-500/30">
+              Sek II &amp; VCÖ-Kongress
+            </span>
+          </div>
+          <p class="text-xs text-slate-500 dark:text-slate-400 font-medium">
+            Strukturbiologie (Cryo-EM) · Präzisions-Onkologie (<em>Nature</em> / C&amp;EN 10/2026) · KI-gestützte Unterrichtsentwicklung
+          </p>
+        </div>
+      </div>
+
+      <!-- Die 4 geforderten Haupt-Steuerbuttons -->
+      <div class="flex items-center gap-2 flex-wrap">
+        <button onclick="openModal('kompakt-modal')" class="beamer-card px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-400 hover:to-orange-500 text-white shadow-md shadow-orange-500/20 transition flex items-center gap-1.5">
+          <span>📖 Kompakt-Info (60 s)</span>
+        </button>
+
+        <button onclick="openModal('workflow-modal')" class="beamer-card px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white shadow-md shadow-indigo-500/20 transition flex items-center gap-1.5">
+          <span>🛠️ KI-Workflow (Behind the Scenes)</span>
+        </button>
+
+        <button id="btn-beamer" onclick="toggleBeamerMode()" title="Vergrößert Schriftgrößen, Kontraste und Bedienelemente für Hörsaal und Beamer" class="beamer-card px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 transition flex items-center gap-1.5">
+          <span>📽️ Beamer-Modus:</span>
+          <span id="beamer-status" class="font-bold text-slate-500 dark:text-slate-400">Aus</span>
+        </button>
+
+        <button id="btn-theme" onclick="toggleTheme()" title="Farbschema inklusive 3D-Hintergrund zwischen Hell und Dunkel umschalten" class="beamer-card px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-300 dark:border-slate-700 transition flex items-center gap-1.5">
+          <span id="theme-icon">☀️</span>
+          <span id="theme-label">Hell / Dunkel</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- 5-MODUL-HAUPTNAVIGATION -->
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 pb-2.5">
+      <nav aria-label="Hauptmodule" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-1.5 p-1.5 rounded-2xl bg-slate-100 dark:bg-slate-950/90 border border-slate-200 dark:border-slate-800">
+        <button onclick="switchMainTab(1)" id="tab-btn-1" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition text-center">
+          1. Funktions-Schema (2D-Einstieg)
+        </button>
+        <button onclick="switchMainTab(2)" id="tab-btn-2" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition text-center">
+          2. Werkzeug-Duell (Cas9 vs. Cas12a2)
+        </button>
+        <button onclick="switchMainTab(3)" id="tab-btn-3" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition text-center">
+          3. 3D-Struktur-Labor (Cryo-EM)
+        </button>
+        <button onclick="switchMainTab(4)" id="tab-btn-4" class="px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition text-center">
+          4. Krebstherapie 2026 &amp; Code
+        </button>
+        <button onclick="switchMainTab(5)" id="tab-btn-5" class="col-span-2 md:col-span-1 px-3 py-2 rounded-xl text-xs sm:text-sm font-bold transition text-center">
+          5. Sek-II-Aufgaben &amp; Selbsttest
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ===================================================================== -->
+  <!-- HAUPTBEREICH MIT DEN 5 INTERAKTIVEN MODULEN                           -->
+  <!-- ===================================================================== -->
+  <main class="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 py-5">
+
+    <!-- =================================================================== -->
+    <!-- MODUL 1: FUNKTIONS-SCHEMA (2D-EINSTIEG)                             -->
+    <!-- =================================================================== -->
+    <section id="module-1" class="space-y-5">
+
+      <!-- Schnell-Orientierungsleiste -->
+      <div class="beamer-card rounded-2xl bg-gradient-to-r from-sky-500/10 via-indigo-500/10 to-rose-500/10 dark:from-sky-500/15 dark:via-indigo-500/10 dark:to-rose-500/15 border border-sky-300/70 dark:border-sky-500/30 px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">🧬</span>
+          <div>
+            <p class="text-xs sm:text-sm font-bold text-slate-900 dark:text-white">
+              Vom „gescheiterten“ Gentechnik-Fund (2015) zur hochselektiven Krebstherapie-Plattform (<em>Nature</em> &amp; C&amp;EN 10/2026)
+            </p>
+            <p class="text-xs text-slate-600 dark:text-slate-300">
+              Erkunde zuerst im didaktisch reduzierten 2D-Modell, wie <strong>SuCas12a2</strong> aus <em>Sulfuricurvum sp.</em> zwischen gesunder Zelle und Tumorzelle unterscheidet.
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <button onclick="openModal('kompakt-modal')" class="px-3.5 py-2 rounded-xl text-xs font-bold bg-sky-600 hover:bg-sky-500 text-white shadow transition">
+            📖 60-Sekunden-Überblick →
+          </button>
+        </div>
+      </div>
+
+      <!-- Hauptkarte Modul 1 -->
+      <div class="beamer-card rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-4 sm:p-6 space-y-5">
+
+        <!-- Kopfzeile + Animations-Steuerung mit Fortschrittsbalken -->
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400">Dreistufige allosterische Aktivierung</span>
+            <h2 class="text-base sm:text-xl font-extrabold text-slate-900 dark:text-white mt-0.5">
+              Vom molekularen Sicherheitsschloss (8D49) zum 90°-DNA-Shredder (8D4A)
+            </h2>
+          </div>
+
+          <div class="flex items-center gap-2 flex-wrap">
+            <button onclick="stepSchema(-1)" class="px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 transition">
+              ◀ Zurück
+            </button>
+            <button id="btn-auto-anim" onclick="toggleAutoAnim()" class="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 hover:bg-indigo-500 text-white shadow transition flex items-center gap-1.5">
+              <span id="auto-anim-label">▶ Auto-Animation abspielen</span>
+            </button>
+            <button onclick="stepSchema(1)" class="px-3 py-2 rounded-xl text-xs font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 transition">
+              Weiter ▶
+            </button>
+          </div>
+        </div>
+
+        <!-- Auto-Play Fortschrittsanzeige -->
+        <div class="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+          <div id="schema-progress-bar" class="h-full bg-gradient-to-r from-emerald-500 via-amber-500 to-rose-500 transition-all duration-300" style="width: 33.33%"></div>
+        </div>
+
+        <!-- 3 Zustands-Buttons -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <button onclick="setSchemaState(1)" id="schema-tab-1" class="text-left p-3.5 rounded-2xl border transition">
+            <div class="flex items-center justify-between text-xs font-bold">
+              <span class="text-emerald-600 dark:text-emerald-400">① Zustand 1 · Gesunde Zelle</span>
+              <span class="font-mono px-2 py-0.5 rounded bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300">PDB 8D49 · 3,20 Å</span>
+            </div>
+            <div class="text-sm font-extrabold mt-1">Inaktiv / Autoinhibiert</div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Geschlossene „Austern-Form“: RuvC verdeckt, dsDNA prallt ab (100 % Zellschutz).</p>
+          </button>
+
+          <button onclick="setSchemaState(2)" id="schema-tab-2" class="text-left p-3.5 rounded-2xl border transition">
+            <div class="flex items-center justify-between text-xs font-bold">
+              <span class="text-amber-600 dark:text-amber-400">② Zustand 2 · mRNA-Kontakt</span>
+              <span class="font-mono px-2 py-0.5 rounded bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300">PDB 8D4B · 2,92 Å</span>
+            </div>
+            <div class="text-sm font-extrabold mt-1">Allosterische 50-Å-Entriegelung</div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Ziel-mRNA + 5'-GAAAG-3' PFS spannen REC-Lappen auf; Insertion-Domäne schaltet RuvC frei.</p>
+          </button>
+
+          <button onclick="setSchemaState(3)" id="schema-tab-3" class="text-left p-3.5 rounded-2xl border transition">
+            <div class="flex items-center justify-between text-xs font-bold">
+              <span class="text-rose-600 dark:text-rose-400">③ Zustand 3 · Tumorzelle</span>
+              <span class="font-mono px-2 py-0.5 rounded bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300">PDB 8D4A · 2,74 Å</span>
+            </div>
+            <div class="text-sm font-extrabold mt-1">90°-DNA-Knick &amp; Shredding</div>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">3 Tyrosin-Klammern schmelzen dsDNA auf → Spaltung an Mg²⁺ → programmierter Zelltod.</p>
+          </button>
+        </div>
+
+        <!-- Zweispaltige Hauptbühne: Links großes SVG + Farblegende, Rechts Struktur-Kennzahlen & 3D-Sprung -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+          <!-- LINKE SPALTE (7/12): Großes beschriftetes Vektor-SVG -->
+          <div class="lg:col-span-7 space-y-3">
+            <div class="rounded-2xl bg-slate-900 border border-slate-800 p-3 sm:p-4 shadow-inner overflow-hidden">
+              <svg id="su-schema-svg" viewBox="0 0 780 420" class="w-full h-auto select-none" role="img" aria-label="Dreistufiges Funktionsschema von SuCas12a2">
+                <defs>
+                  <linearGradient id="nucBodyGrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#334155"/>
+                    <stop offset="100%" stop-color="#1e293b"/>
+                  </linearGradient>
+                  <linearGradient id="recBodyGrad" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stop-color="#64748b"/>
+                    <stop offset="100%" stop-color="#475569"/>
+                  </linearGradient>
+                  <filter id="mgGlow" x="-30%" y="-30%" width="160%" height="160%">
+                    <feGaussianBlur stdDeviation="3.5" result="blur"/>
+                    <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                  </filter>
+                </defs>
+
+                <!-- Dunkler Zeichenhintergrund -->
+                <rect x="0" y="0" width="780" height="420" rx="16" fill="#0b1120"/>
+                <text id="svg-headline" x="24" y="34" fill="#f1f5f9" font-size="14.5" font-weight="800" font-family="Inter, sans-serif">
+                  Zustand 1: Geschlossene „Austern-Form“ (PDB 8D49 · 100 % Schutz in gesunden Zellen)
+                </text>
+
+                <!-- NUC-LAPPEN (Statisches Rückgrat Kette A + Zinkfinger) -->
+                <g id="svg-nuc">
+                  <path d="M 145 225 C 135 330, 250 372, 395 368 C 540 364, 610 318, 598 228 C 588 194, 520 202, 468 222 C 435 235, 388 238, 342 224 C 275 204, 156 190, 145 225 Z"
+                        fill="url(#nucBodyGrad)" stroke="#94a3b8" stroke-width="2.2"/>
+                  <text x="235" y="346" fill="#cbd5e1" font-size="12" font-weight="700">NUC-Lappen (SuCas12a2 · Kette A, 1232 AS)</text>
+                  <!-- Struktureller Zn2+-Finger -->
+                  <circle cx="545" cy="306" r="7" fill="#06b6d4" stroke="#cffafe" stroke-width="1.5"/>
+                  <text x="545" y="325" text-anchor="middle" fill="#67e8f9" font-size="9.5" font-weight="700">Zn²⁺-Domäne</text>
+                </g>
+
+                <!-- KATALYTISCHES RuvC-ZENTRUM (Asp848, Glu1063, Asp1213 + 2 Mg2+) -->
+                <g id="svg-ruvc">
+                  <rect x="348" y="232" width="126" height="62" rx="14" fill="#064e3b" stroke="#22c55e" stroke-width="2.2"/>
+                  <text x="411" y="251" text-anchor="middle" fill="#86efac" font-size="11" font-weight="800">RuvC-Zentrum</text>
+                  <text x="411" y="265" text-anchor="middle" fill="#bbf7d0" font-size="9.5" font-family="JetBrains Mono, monospace">D848 · E1063 · D1213</text>
+                  <circle cx="388" cy="280" r="6.5" fill="#22c55e" filter="url(#mgGlow)"/>
+                  <circle cx="434" cy="280" r="6.5" fill="#22c55e" filter="url(#mgGlow)"/>
+                  <text x="411" y="284" text-anchor="middle" fill="#ecfdf5" font-size="8.5" font-weight="800">2× Mg²⁺</text>
+                </g>
+
+                <!-- ALLOSTERISCHE INSERTION-DOMÄNE (AS 938-1030, Signalwandler, verschiebt sich um 15 Å) -->
+                <g id="svg-insertion" class="svg-morph">
+                  <rect x="482" y="176" width="132" height="54" rx="16" fill="#581c87" stroke="#c084fc" stroke-width="2"/>
+                  <text x="548" y="198" text-anchor="middle" fill="#f3e8ff" font-size="10.5" font-weight="800">Insertion-Domäne</text>
+                  <text id="svg-insertion-sub" x="548" y="214" text-anchor="middle" fill="#d8b4fe" font-size="9.5">AS 938–1030 (Ruhelage)</text>
+                </g>
+
+                <!-- LEIT-RNA (crRNA, Kette B, blau) -->
+                <g id="svg-crrna">
+                  <path d="M 182 192 Q 245 172, 360 176 L 452 176" fill="none" stroke="#3b82f6" stroke-width="7" stroke-linecap="round"/>
+                  <g stroke="#60a5fa" stroke-width="2.5">
+                    <line x1="250" y1="176" x2="250" y2="162"/><line x1="274" y1="175" x2="274" y2="161"/>
+                    <line x1="298" y1="175" x2="298" y2="161"/><line x1="322" y1="175" x2="322" y2="161"/>
+                    <line x1="346" y1="176" x2="346" y2="162"/><line x1="370" y1="176" x2="370" y2="162"/>
+                    <line x1="394" y1="176" x2="394" y2="162"/><line x1="418" y1="176" x2="418" y2="162"/>
+                  </g>
+                  <text x="192" y="212" fill="#93c5fd" font-size="11" font-weight="700">Leit-RNA (crRNA · Kette B)</text>
+                </g>
+
+                <!-- ZIEL-mRNA + 5'-GAAAG-3' PFS-MOTIV (Kette C, orange + gelb, ab Zustand 2 sichtbar) -->
+                <g id="svg-target-mrna" class="svg-fade" style="opacity: 0; transform: translateY(-28px);">
+                  <path d="M 236 146 L 432 146" fill="none" stroke="#f97316" stroke-width="7" stroke-linecap="round"/>
+                  <g stroke="#fb923c" stroke-width="2.5">
+                    <line x1="250" y1="148" x2="250" y2="161"/><line x1="274" y1="148" x2="274" y2="161"/>
+                    <line x1="298" y1="148" x2="298" y2="161"/><line x1="322" y1="148" x2="322" y2="161"/>
+                    <line x1="346" y1="148" x2="346" y2="161"/><line x1="370" y1="148" x2="370" y2="161"/>
+                    <line x1="394" y1="148" x2="394" y2="161"/><line x1="418" y1="148" x2="418" y2="161"/>
+                  </g>
+                  <rect x="435" y="133" width="90" height="24" rx="6" fill="#eab308" stroke="#fef08a" stroke-width="1.6"/>
+                  <text x="480" y="149" text-anchor="middle" fill="#0f172a" font-size="10" font-weight="800" font-family="JetBrains Mono, monospace">5'-GAAAG-3'</text>
+                  <text x="335" y="130" text-anchor="middle" fill="#fdba74" font-size="11" font-weight="700">Ziel-mRNA (Kette C: Virus / Tumor) + PFS</text>
+                </g>
+
+                <!-- REC1 / REC2 ERKENNUNGSLAPPEN (klappen um 50 Å nach oben auf) -->
+                <g id="svg-rec" class="svg-morph">
+                  <path d="M 158 188 C 158 106, 272 90, 375 102 C 468 92, 558 116, 552 190 C 545 238, 464 262, 380 258 C 290 256, 166 230, 158 188 Z"
+                        fill="url(#recBodyGrad)" stroke="#cbd5e1" stroke-width="2.2" fill-opacity="0.96"/>
+                  <text x="355" y="158" text-anchor="middle" fill="#f8fafc" font-size="12.5" font-weight="800">REC1 / REC2 Erkennungslappen</text>
+                  <text id="svg-rec-sub" x="355" y="176" text-anchor="middle" fill="#cbd5e1" font-size="10.5">Versperren in gesunden Zellen den RuvC-Kanal</text>
+                </g>
+
+                <!-- ZUSTAND 1 ELEMENTE: Verriegelungs-Schild + abprallende gesunde Zell-DNA -->
+                <g id="svg-state1-guard" class="svg-fade">
+                  <rect x="338" y="212" width="146" height="32" rx="9" fill="#065f46" stroke="#34d399" stroke-width="1.8"/>
+                  <text x="411" y="232" text-anchor="middle" fill="#ecfdf5" font-size="11" font-weight="800">🔒 RuvC abgeschirmt</text>
+
+                  <!-- Abprallende intakte Doppelstrang-DNA rechts -->
+                  <g transform="translate(652, 205)">
+                    <line x1="12" y1="0" x2="12" y2="125" stroke="#ef4444" stroke-width="5.5" stroke-linecap="round"/>
+                    <line x1="34" y1="0" x2="34" y2="125" stroke="#d946ef" stroke-width="5.5" stroke-linecap="round"/>
+                    <g stroke="#cbd5e1" stroke-width="2">
+                      <line x1="13" y1="20" x2="33" y2="20"/><line x1="13" y1="45" x2="33" y2="45"/>
+                      <line x1="13" y1="70" x2="33" y2="70"/><line x1="13" y1="95" x2="33" y2="95"/>
+                    </g>
+                    <text x="23" y="146" text-anchor="middle" fill="#86efac" font-size="10.5" font-weight="700">Zell-dsDNA prallt ab</text>
+                    <text x="23" y="160" text-anchor="middle" fill="#6ee7b7" font-size="9.5">(100 % Schutz)</text>
+                  </g>
+                  <!-- Rückprall-Bogenpfeil -->
+                  <path d="M 642 265 Q 608 265, 628 238" fill="none" stroke="#34d399" stroke-width="2.5" stroke-dasharray="4 3"/>
+                </g>
+
+                <!-- 50 Å ÖFFNUNGSMARKIERUNG (ab Zustand 2 sichtbar) -->
+                <g id="svg-open-indicator" class="svg-fade" style="opacity: 0;">
+                  <line x1="120" y1="202" x2="120" y2="96" stroke="#38bdf8" stroke-width="2.5" stroke-dasharray="4 3"/>
+                  <polygon points="120,86 114,99 126,99" fill="#38bdf8"/>
+                  <polygon points="120,212 114,199 126,199" fill="#38bdf8"/>
+                  <text x="64" y="148" text-anchor="middle" fill="#38bdf8" font-size="11.5" font-weight="800">~50 Å</text>
+                  <text x="64" y="163" text-anchor="middle" fill="#7dd3fc" font-size="10">Öffnung</text>
+                </g>
+
+                <!-- ZUSTAND 2 HINWEIS: Freigelegte positiv geladene RuvC-Spalte -->
+                <g id="svg-state2-ready" class="svg-fade" style="opacity: 0;">
+                  <rect x="548" y="252" width="206" height="54" rx="12" fill="#451a03" stroke="#f59e0b" stroke-width="1.8"/>
+                  <text x="651" y="274" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="800">🔓 Sicherheitsbremse gelöst!</text>
+                  <text x="651" y="292" text-anchor="middle" fill="#fcd34d" font-size="10">Positiv geladene Spalte zieht DNA an</text>
+                </g>
+
+                <!-- ZUSTAND 3: 90°-DNA-KNICK, TYROSIN-KLAMMERN & SHREDDING -->
+                <g id="svg-state3-shred" class="svg-fade" style="opacity: 0;">
+                  <!-- 90° abgeknickter DNA-Doppelstrang (Kette D rot + Kette G/E magenta) -->
+                  <path d="M 730 270 L 495 270 Q 446 270, 440 305 L 440 398" fill="none" stroke="#ef4444" stroke-width="6.5" stroke-linecap="round"/>
+                  <path d="M 730 288 L 510 288 Q 466 288, 460 318 L 460 398" fill="none" stroke="#d946ef" stroke-width="6" stroke-linecap="round"/>
+                  <!-- Basenpaare rechts intakt, am Knick lokal aufgeschmolzen! -->
+                  <g stroke="#fbcfe8" stroke-width="2">
+                    <line x1="540" y1="272" x2="540" y2="286"/><line x1="568" y1="272" x2="568" y2="286"/>
+                    <line x1="596" y1="272" x2="596" y2="286"/><line x1="624" y1="272" x2="624" y2="286"/>
+                    <line x1="652" y1="272" x2="652" y2="286"/><line x1="680" y1="272" x2="680" y2="286"/>
+                  </g>
+                  <text x="635" y="256" text-anchor="middle" fill="#fca5a5" font-size="11" font-weight="700">Beliebige Zell-dsDNA (D + G/E)</text>
+                  <text x="524" y="326" fill="#fde047" font-size="11" font-weight="800">90°-Knick + Melting!</text>
+
+                  <!-- 3 Aromatische Tyrosin-Klammern als gelbe Phenol-Sechsecke -->
+                  <g fill="#eab308" stroke="#fef9c3" stroke-width="1.6">
+                    <polygon points="484,256 493,261 493,271 484,276 475,271 475,261"/>
+                    <polygon points="464,266 473,271 473,281 464,286 455,281 455,271"/>
+                    <polygon points="488,290 497,295 497,305 488,310 479,305 479,295"/>
+                  </g>
+                  <rect x="536" y="340" width="222" height="46" rx="10" fill="#422006" stroke="#eab308" stroke-width="1.6"/>
+                  <text x="647" y="359" text-anchor="middle" fill="#fef08a" font-size="10.5" font-weight="800">⬡ Aromatische Tyrosin-Klammern</text>
+                  <text x="647" y="374" text-anchor="middle" fill="#fde68a" font-size="9.5" font-family="JetBrains Mono, monospace">Tyr465 · Tyr1069 · Tyr1080 (π-Stacking)</text>
+
+                  <!-- Katalytischer Schnittfunken an den Mg2+-Ionen -->
+                  <g class="spark-anim">
+                    <polygon points="412,276 422,262 426,277 442,273 430,286 441,299 424,294 416,308 412,292 396,294 408,283 399,269"
+                             fill="#facc15" stroke="#ef4444" stroke-width="1.5"/>
+                  </g>
+
+                  <!-- Zerschredderte DNA-Fragmente links unten -->
+                  <g class="frag-anim">
+                    <line x1="330" y1="296" x2="290" y2="314" stroke="#ef4444" stroke-width="5.5" stroke-linecap="round"/>
+                    <line x1="312" y1="274" x2="274" y2="282" stroke="#d946ef" stroke-width="5" stroke-linecap="round"/>
+                    <line x1="346" y1="322" x2="312" y2="348" stroke="#ef4444" stroke-width="5.5" stroke-linecap="round"/>
+                    <text x="236" y="302" text-anchor="middle" fill="#f87171" font-size="10.5" font-weight="800">💥 DNA-Fragmente</text>
+                    <text x="236" y="316" text-anchor="middle" fill="#fca5a5" font-size="9.5">(Programmierter Zelltod)</text>
+                  </g>
+                </g>
+              </svg>
+            </div>
+
+            <!-- Durchgehende Farblegende -->
+            <div class="px-4 py-2.5 rounded-2xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs font-medium">
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#64748b]"></span>SuCas12a2 (Kette A)</span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#3b82f6]"></span>crRNA (Kette B)</span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#f97316]"></span>Ziel-mRNA (Kette C)</span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#a855f7]"></span>Insertion-Signalwandler</span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#22c55e]"></span>RuvC &amp; Mg²⁺</span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#eab308]"></span>Tyrosin-Klammern / PFS</span>
+              <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#ef4444]"></span>dsDNA (D &amp; G/E)</span>
+            </div>
+          </div>
+
+          <!-- RECHTE SPALTE (5/12): Detaillierte Struktur-Kennzahlen-Karte & Direkt-Sprung ins 3D-Labor -->
+          <div id="schema-detail-panel" class="lg:col-span-5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-5 space-y-4">
+            <!-- Dynamisch via JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- MODUL 2: WERKZEUG-DUELL (CAS9 VS. CAS12A2 VS. DOCKING)              -->
+    <!-- =================================================================== -->
+    <section id="module-2" class="hidden space-y-6">
+
+      <!-- 7-Kriterien Vergleichsmatrix -->
+      <div class="beamer-card rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-4 sm:p-6 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400">Systematische Gegenüberstellung anhand von 7 Kriterien</span>
+            <h2 class="text-base sm:text-xl font-extrabold text-slate-900 dark:text-white mt-0.5">
+              Präzisionsschere SpCas9 (PDB 5F9R) vs. DNA-Shredder SuCas12a2 (PDB 8D4A)
+            </h2>
+          </div>
+
+          <button id="btn-docking-col" onclick="toggleDockingColumn()" class="px-4 py-2 rounded-xl text-xs sm:text-sm font-bold border-2 border-teal-500/50 bg-teal-500/10 text-teal-800 dark:text-teal-300 hover:bg-teal-500/20 transition flex items-center gap-2">
+            <span id="docking-col-label">➕ Klassisches Wirkstoff-Docking (z. B. COX-2-Hemmung mit Ibuprofen) als 3. Säule vergleichen</span>
+          </button>
+        </div>
+
+        <div class="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+          <table class="w-full text-left border-collapse text-xs sm:text-sm">
+            <thead>
+              <tr class="bg-slate-100 dark:bg-slate-950 text-slate-900 dark:text-white border-b border-slate-200 dark:border-slate-800">
+                <th class="p-3.5 font-extrabold w-[19%]">Vergleichskriterium</th>
+                <th class="p-3.5 font-extrabold text-sky-700 dark:text-sky-400">
+                  <div class="flex items-center justify-between gap-2">
+                    <span>✂️ CRISPR-Cas9 (Präzisionsschere)</span>
+                    <button onclick="jumpToLabSingle('5F9R', 'overview')" class="font-mono text-[11px] px-2 py-0.5 rounded bg-sky-500/20 hover:bg-sky-500/30">PDB 5F9R →</button>
+                  </div>
+                </th>
+                <th class="p-3.5 font-extrabold text-rose-700 dark:text-rose-400">
+                  <div class="flex items-center justify-between gap-2">
+                    <span>💥 CRISPR-Cas12a2 (DNA-Shredder)</span>
+                    <button onclick="jumpToLabSingle('8D4A', 'clamps')" class="font-mono text-[11px] px-2 py-0.5 rounded bg-rose-500/20 hover:bg-rose-500/30">PDB 8D4A →</button>
+                  </div>
+                </th>
+                <th class="docking-col hidden p-3.5 font-extrabold text-teal-700 dark:text-teal-400">
+                  💊 Klassisches Wirkstoff-Docking (z. B. Ibuprofen → COX-2)
+                </th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+              <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/30">
+                <td class="p-3.5 font-bold bg-slate-50/60 dark:bg-slate-950/40">1. Biologische Rolle in Bakterien</td>
+                <td class="p-3.5">Gezielte adaptive Phagen-Abwehr: Zerschneidet eindringende Viren-DNA, damit die Bakterienzelle unversehrt weiterlebt.</td>
+                <td class="p-3.5"><strong>Abortive Infektion (Altruistischer Zelltod):</strong> Opfert bei fortgeschrittenem Phagenbefall die eigene Wirtszelle samt Virus, um die restliche Kolonie zu retten.</td>
+                <td class="docking-col hidden p-3.5">Kein bakterielles Immunsystem, sondern gezielte pharmazeutische Modulation menschlicher Enzyme/Rezeptoren.</td>
+              </tr>
+              <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/30">
+                <td class="p-3.5 font-bold bg-slate-50/60 dark:bg-slate-950/40">2. Erkanntes Zielmolekül &amp; Flankierungssequenz</td>
+                <td class="p-3.5">Doppelstrang-<strong>DNA (dsDNA)</strong> mit benachbartem <strong>PAM-Motiv</strong> (<span class="font-mono font-bold">5'-NGG-3'</span>) → geordnete R-Loop-Aufwindung.</td>
+                <td class="p-3.5">Einzelstrang-<strong>mRNA (Target RNA)</strong> mit benachbartem <strong>PFS-Motiv</strong> (<span class="font-mono font-bold">5'-GAAAG-3'</span>) → reine Transkript-Erkennung!</td>
+                <td class="docking-col hidden p-3.5">Dreidimensionale, meist hydrophobe <strong>Bindetasche eines gefalteten Proteins</strong> (~20–50 Schweratome im Liganden).</td>
+              </tr>
+              <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/30">
+                <td class="p-3.5 font-bold bg-slate-50/60 dark:bg-slate-950/40">3. Konformationsänderung</td>
+                <td class="p-3.5">Lokale Einklappbewegung der HNH-Domäne zum Zielstrang erst bei vollständiger DNA-RNA-Paarung.</td>
+                <td class="p-3.5">Massive allosterische <strong>50-Å-Öffnung</strong> der REC-Lappen + <strong>15-Å-Shift</strong> der Insertion-Domäne entriegelt die RuvC-Spalte.</td>
+                <td class="docking-col hidden p-3.5">Schlüssel-Schloss-Passung bzw. lokaler <em>Induced Fit</em> von Aminosäure-Seitenketten um den kleinen Liganden.</td>
+              </tr>
+              <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/30">
+                <td class="p-3.5 font-bold bg-slate-50/60 dark:bg-slate-950/40">4. Substrat der Spaltung &amp; katalytische Domänen</td>
+                <td class="p-3.5"><strong>2 Nuklease-Domänen (HNH + RuvC)</strong> setzen exakt <strong>1 sequenzspezifischen Doppelstrangbruch</strong> (cis-Spaltung).</td>
+                <td class="p-3.5"><strong>1 exponierte RuvC-Tasche</strong> + <strong>3 Tyrosin-Klammern</strong> (90°-Knick) zerschreddern kollateral <strong>jegliche dsDNA, ssDNA &amp; ssRNA</strong> (trans-Spaltung).</td>
+                <td class="docking-col hidden p-3.5">Keine Nukleinsäurespaltung – kompetitive oder allosterische Blockade des Substratumsatzes (z. B. Arachidonsäure in COX-2).</td>
+              </tr>
+              <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/30">
+                <td class="p-3.5 font-bold bg-slate-50/60 dark:bg-slate-950/40">5. Schicksal der Zelle</td>
+                <td class="p-3.5"><span class="font-bold text-emerald-600 dark:text-emerald-400">Zelle überlebt!</span> Zelleigene DNA-Reparatur (NHEJ / HDR) schließt den Bruch → Gen-Editierung.</td>
+                <td class="p-3.5"><span class="font-bold text-rose-600 dark:text-rose-400">Selektiver Zelltod!</span> Irreversible Genom-Fragmentierung tötet gezielt die mutierte/infizierte Zelle.</td>
+                <td class="docking-col hidden p-3.5">Zelle bleibt genetisch unverändert; Stoffwechselweg wird dosis- und zeitabhängig gedämpft.</td>
+              </tr>
+              <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/30">
+                <td class="p-3.5 font-bold bg-slate-50/60 dark:bg-slate-950/40">6. Eignung für „Undruggable Targets“</td>
+                <td class="p-3.5">Eingeschränkt in der Onkologie: Einzelne Schnitte können durch Ausweichmutationen überlebt werden; Off-Target-Edits in gesunden Zellen unerwünscht.</td>
+                <td class="p-3.5"><strong>Herausragend!</strong> Umgeht taschenlose Proteine (wie mutiertes <em>p53</em>) komplett und nutzt bereits 1 Punktmutation auf der mRNA als Zündschlüssel.</td>
+                <td class="docking-col hidden p-3.5"><strong>Scheitert häufig:</strong> Ohne definierte Tasche (z. B. flache Transkriptionsfaktoren wie <em>p53</em> oder Funktionsverlust-Mutanten) greift kein kleiner Inhibitor.</td>
+              </tr>
+              <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/30">
+                <td class="p-3.5 font-bold bg-slate-50/60 dark:bg-slate-950/40">7. Klinische Anwendung</td>
+                <td class="p-3.5">Heilung monogener Erbkrankheiten (z. B. zugelassene Gentherapie <em>Casgevy</em> bei Sichelzellanämie / β-Thalassämie).</td>
+                <td class="p-3.5">Programmierbare Präzisions-Chemotherapie (HPV-induzierte Karzinome, <em>p53</em>- &amp; Lebertumoren; klinische Studien ab ca. 2030 erwartet).</td>
+                <td class="docking-col hidden p-3.5">Breite orale Standardmedikation (Analgetika, Entzündungshemmer, Blutdrucksenker, Kinase-Inhibitoren).</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="flex justify-end">
+          <button onclick="jumpToSplitDuel()" class="px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-gradient-to-r from-sky-600 to-rose-600 hover:from-sky-500 hover:to-rose-500 text-white shadow transition">
+            🔬 Beide Enzyme jetzt Seite an Seite im 3D-Split-Screen vergleichen (5F9R vs. 8D4A) →
+          </button>
+        </div>
+      </div>
+
+      <!-- Interaktiver Therapie-Entscheidungstrainer (4 klinische Fälle) -->
+      <div class="beamer-card rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-4 sm:p-6 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Anwendungstraining Sekundarstufe II</span>
+            <h2 class="text-base sm:text-xl font-extrabold text-slate-900 dark:text-white mt-0.5">
+              🎯 Therapie-Entscheidungstrainer: Welches molekulare Werkzeug ist biochemisch sinnvoll?
+            </h2>
+          </div>
+          <span id="trainer-progress" class="px-3.5 py-1.5 rounded-xl bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 text-xs font-extrabold border border-emerald-500/30">
+            Gelöste Fälle: 0 / 4
+          </span>
+        </div>
+
+        <div id="trainer-tabs" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5"></div>
+        <div id="trainer-card" class="rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-5 space-y-4"></div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- MODUL 3: 3D-STRUKTUR-LABOR (CRYO-EM · 3DMOL.JS)                     -->
+    <!-- =================================================================== -->
+    <section id="module-3" class="hidden space-y-4">
+
+      <!-- Obere Modus- & Komfort-Leiste -->
+      <div class="beamer-card rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3.5 shadow flex flex-wrap items-center justify-between gap-3">
+        <!-- 3 Ansichtsmodi -->
+        <div class="flex items-center gap-1.5 flex-wrap">
+          <button id="mode-btn-single" onclick="setLabViewMode('single')" class="px-3.5 py-2 rounded-xl text-xs font-bold border transition">
+            1. Einzel-Explorer
+          </button>
+          <button id="mode-btn-states" onclick="setLabViewMode('split_states')" class="px-3.5 py-2 rounded-xl text-xs font-bold border transition">
+            2. Split-Screen: Gesund (8D49) vs. Tumor (8D4A)
+          </button>
+          <button id="mode-btn-duel" onclick="setLabViewMode('split_duel')" class="px-3.5 py-2 rounded-xl text-xs font-bold border transition">
+            3. Split-Screen: Cas9 (5F9R) vs. Cas12a2 (8D4A)
+          </button>
+        </div>
+
+        <!-- 4 Komfort-Toggles -->
+        <div class="flex items-center gap-2 flex-wrap">
+          <button id="btn-toggle-surf" onclick="toggleVDWSurface()" class="px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:border-sky-400 transition">
+            🫧 Proteinoberfläche: Aus
+          </button>
+          <button id="btn-toggle-sync" onclick="toggleCameraSync()" class="px-3 py-1.5 rounded-xl text-xs font-bold border border-sky-500/50 bg-sky-500/15 text-sky-800 dark:text-sky-300 transition">
+            🔗 Kameras koppeln: Ein
+          </button>
+          <button id="btn-toggle-spin" onclick="toggleSpin()" class="px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 hover:border-sky-400 transition">
+            🔄 Rotation: Aus
+          </button>
+          <button id="btn-toggle-labels" onclick="toggle3DLabels()" class="px-3 py-1.5 rounded-xl text-xs font-bold border border-amber-500/50 bg-amber-500/15 text-amber-800 dark:text-amber-300 transition">
+            🏷️ 3D-Beschriftungen: Ein
+          </button>
+        </div>
+      </div>
+
+      <!-- Haupt-Grid: Links 8 Spalten 3D-Bühne (echtes Side-by-Side im Split-Modus!), Rechts 4 Spalten Hotspots & Analyse -->
+      <div class="grid grid-cols-1 xl:grid-cols-12 gap-4 items-start">
+
+        <!-- 3D-VIEWPORT KARTE (8/12) -->
+        <div class="xl:col-span-8 beamer-card rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl overflow-hidden flex flex-col">
+
+          <!-- PDB-Auswahlleiste im Einzelmodus + Cache-Anzeige -->
+          <div class="px-4 py-2.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 flex flex-wrap items-center justify-between gap-2">
+            <div id="single-pdb-pills" class="flex flex-wrap items-center gap-1.5">
+              <button onclick="selectSinglePDB('8D49')" data-pdb="8D49" class="pdb-pill px-3 py-1.5 rounded-xl text-xs font-bold border transition">
+                🔒 8D49 · Inaktiv (3,20 Å)
+              </button>
+              <button onclick="selectSinglePDB('8D4B')" data-pdb="8D4B" class="pdb-pill px-3 py-1.5 rounded-xl text-xs font-bold border transition">
+                🔓 8D4B · + Ziel-mRNA (2,92 Å)
+              </button>
+              <button onclick="selectSinglePDB('8D4A')" data-pdb="8D4A" class="pdb-pill px-3 py-1.5 rounded-xl text-xs font-bold border transition">
+                💥 8D4A · DNA-Shredder (2,74 Å)
+              </button>
+              <button onclick="selectSinglePDB('5F9R')" data-pdb="5F9R" class="pdb-pill px-3 py-1.5 rounded-xl text-xs font-bold border transition">
+                ✂️ 5F9R · SpCas9 (3,40 Å)
+              </button>
+            </div>
+            <div id="split-mode-banner" class="hidden text-xs font-bold text-sky-700 dark:text-sky-300">
+              Nebeneinanderliegender Side-by-Side-Vergleich aktiv
+            </div>
+            <span id="cache-status-badge" class="font-mono text-[11px] text-slate-500 dark:text-slate-400">RCSB Live-Cache bereit</span>
+          </div>
+
+          <!-- 3Dmol.js Bühne -->
+          <div class="relative w-full h-[480px] sm:h-[550px] select-none">
+
+            <!-- Modus 1: Einzel-Viewer -->
+            <div id="stage-single-wrap" class="w-full h-full">
+              <div id="mol-single" class="mol-stage"></div>
+            </div>
+
+            <!-- Modus 2 & 3: Echter Side-by-Side Split-Screen (nebeneinander ab md!) -->
+            <div id="stage-split-wrap" class="hidden w-full h-full grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-300 dark:divide-slate-700">
+              <div class="relative w-full h-full">
+                <div id="mol-left" class="mol-stage"></div>
+                <div id="overlay-tag-left" class="absolute top-3 left-3 z-10 pointer-events-none px-3 py-1.5 rounded-xl bg-slate-900/85 text-emerald-300 border border-slate-700 text-xs font-bold shadow">
+                  Gesunde Zelle: Inaktives SuCas12a2 (PDB 8D49)
+                </div>
+              </div>
+              <div class="relative w-full h-full">
+                <div id="mol-right" class="mol-stage"></div>
+                <div id="overlay-tag-right" class="absolute top-3 left-3 z-10 pointer-events-none px-3 py-1.5 rounded-xl bg-slate-900/85 text-rose-300 border border-slate-700 text-xs font-bold shadow">
+                  Tumorzelle: Aktiver DNA-Shredder (PDB 8D4A)
+                </div>
+              </div>
+            </div>
+
+            <!-- Klick-Atom-Inspektor oben rechts -->
+            <div class="absolute top-3 right-3 z-20 rounded-xl bg-slate-900/85 backdrop-blur border border-slate-700 px-3 py-1.5 text-xs text-slate-100 pointer-events-none shadow">
+              <span class="text-[10px] uppercase tracking-wider text-sky-400 font-bold block">Atom-Inspektor (Klick ins Modell)</span>
+              <span id="atom-inspector-text" class="font-mono font-bold">Mausrad: Zoom · Ziehen: Rotation</span>
+            </div>
+
+            <!-- Lade- & Fehler-Overlay -->
+            <div id="lab-loading-overlay" class="hidden absolute inset-0 z-30 bg-slate-950/85 backdrop-blur-sm flex flex-col items-center justify-center p-6 text-center text-white">
+              <div id="lab-spinner" class="w-11 h-11 rounded-2xl border-2 border-sky-400 border-t-transparent animate-spin mb-3"></div>
+              <p id="lab-loading-title" class="text-sm font-bold">Lade Cryo-EM-Strukturdaten von RCSB PDB…</p>
+              <p id="lab-loading-sub" class="text-xs text-slate-400 mt-1 max-w-md">Nach dem ersten Abruf liegen die Koordinaten verzögerungsfrei im Arbeitsspeicher.</p>
+              <button id="lab-retry-btn" onclick="renderActive3DScene()" class="hidden mt-4 px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-xs font-bold">
+                🔄 Erneut versuchen
+              </button>
+            </div>
+          </div>
+
+          <!-- Wissenschaftliche Ketten- & Ionen-Farblegende -->
+          <div class="px-4 py-3 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs font-medium">
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#94a3b8]"></span>Protein (Cas12a2 A / Cas9 B)</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#3b82f6]"></span>crRNA / sgRNA</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#f97316]"></span>Ziel-mRNA (Kette C)</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#ef4444]"></span>Geschnittener DNA-Strang</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-sm bg-[#d946ef]"></span>DNA-Gegenstrang (E/G)</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-[#22c55e]"></span>RuvC-Triade &amp; Mg²⁺</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-[#eab308]"></span>Tyrosin-Klammern</span>
+            <span class="flex items-center gap-1.5"><span class="w-3 h-3 rounded-full bg-[#06b6d4]"></span>Zn²⁺-Finger</span>
+          </div>
+        </div>
+
+        <!-- RECHTE STEUER- & ERKLÄRSPALTE (4/12): 5 Hotspots + Wissenschaftliches Analysepanel -->
+        <div class="xl:col-span-4 space-y-4">
+          <div class="beamer-card rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-4 shadow-lg space-y-2.5">
+            <h3 class="text-sm font-extrabold text-slate-900 dark:text-white">
+              Detail-Hotspots (Kamera-Zoom &amp; 3D-Labels)
+            </h3>
+            <div class="grid grid-cols-1 gap-2">
+              <button onclick="selectHotspot('overview')" data-hs="overview" class="hs-pill text-left p-2.5 rounded-2xl border text-xs transition">
+                <div class="font-bold">🔄 Gesamtansicht</div>
+                <div class="text-slate-500 dark:text-slate-400">Vollständiger Ribonukleoprotein-Komplex (RNP)</div>
+              </button>
+              <button onclick="selectHotspot('ruvc')" data-hs="ruvc" class="hs-pill text-left p-2.5 rounded-2xl border text-xs transition">
+                <div class="font-bold">⚡ RuvC-Tasche &amp; Mg²⁺ (Asp848 / Glu1063 / Asp1213)</div>
+                <div class="text-slate-500 dark:text-slate-400">Zweiwertige Metallionen-Katalyse am Phosphodiester-Rückgrat</div>
+              </button>
+              <button onclick="selectHotspot('clamps')" data-hs="clamps" class="hs-pill text-left p-2.5 rounded-2xl border text-xs transition">
+                <div class="font-bold">🧲 Aromatische Tyrosin-Klammern (Tyr465 / 1069 / 1080)</div>
+                <div class="text-slate-500 dark:text-slate-400">π-Stacking-Keile erzwingen 90°-DNA-Knick &amp; lokales Aufschmelzen</div>
+              </button>
+              <button onclick="selectHotspot('signal')" data-hs="signal" class="hs-pill text-left p-2.5 rounded-2xl border text-xs transition">
+                <div class="font-bold">📡 Allosterischer Signalwandler (AS 938–1030)</div>
+                <div class="text-slate-500 dark:text-slate-400">C-terminale Insertion-Domäne überträgt RNA-Trigger auf RuvC</div>
+              </button>
+              <button onclick="selectHotspot('rnaduplex')" data-hs="rnaduplex" class="hs-pill text-left p-2.5 rounded-2xl border text-xs transition">
+                <div class="font-bold">🧬 RNA-Duplex &amp; PFS-Erkennung</div>
+                <div class="text-slate-500 dark:text-slate-400">Basenpaarung zwischen crRNA (Blau) und Ziel-mRNA (Orange)</div>
+              </button>
+            </div>
+          </div>
+
+          <!-- Wissenschaftliches Analysepanel -->
+          <div id="lab-science-card" class="beamer-card rounded-3xl bg-gradient-to-br from-sky-50 to-indigo-50/70 dark:from-slate-900 dark:to-slate-950 border border-sky-200 dark:border-sky-500/30 p-4 shadow-lg space-y-2.5 text-xs sm:text-sm">
+            <!-- Dynamisch per JS -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- MODUL 4: KREBSTHERAPIE 2026 & GENETISCHER CODE                      -->
+    <!-- =================================================================== -->
+    <section id="module-4" class="hidden space-y-6">
+
+      <!-- TEIL A: Onkologie- & LNP-Delivery-Simulator (C&EN 10/2026 & Nature 2026) -->
+      <div class="beamer-card rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-4 sm:p-6 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400">Teil A · Präzisions-Onkologie &amp; Drug Delivery (Nature / C&amp;EN 10/2026)</span>
+            <h2 class="text-base sm:text-xl font-extrabold text-slate-900 dark:text-white mt-0.5">
+              Selektiver Tumor-Zelltod &amp; die „LNP-Leber-Falle“ im interaktiven Experiment
+            </h2>
+          </div>
+        </div>
+
+        <!-- 3 Therapie-Szenarien -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-2.5">
+          <button onclick="setOncoScenario('hpv')" id="onco-btn-hpv" class="text-left p-3.5 rounded-2xl border text-xs transition">
+            <div class="font-extrabold text-sm">1) Akribion Therapeutics (GeCas12a2)</div>
+            <div class="text-slate-500 dark:text-slate-400 mt-0.5">Virale HPV-Onkogene E6/E7 (Kopf-Hals- &amp; Zervixkarzinom · ~94 % Elimination)</div>
+          </button>
+          <button onclick="setOncoScenario('p53')" id="onco-btn-p53" class="text-left p-3.5 rounded-2xl border text-xs transition">
+            <div class="font-extrabold text-sm">2) Confluence &amp; Doudna-Labor (SuCas12a2)</div>
+            <div class="text-slate-500 dark:text-slate-400 mt-0.5">Einzelbasen-Mutation in <em>p53</em> (~40 % aller Tumoren · „undruggable“)</div>
+          </button>
+          <button onclick="setOncoScenario('chemo')" id="onco-btn-chemo" class="text-left p-3.5 rounded-2xl border text-xs transition">
+            <div class="font-extrabold text-sm">3) Klassische DNA-Chemotherapie</div>
+            <div class="text-slate-500 dark:text-slate-400 mt-0.5">Unselektive Zytostatika im Kontrast (keine mRNA-Schaltlogik)</div>
+          </button>
+        </div>
+
+        <!-- Interaktive Parameter-Schalter: PFS-Präsenz & LNP-Formulierung -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <div class="text-xs font-extrabold">Passende PFS-Sequenz neben der Mutation vorhanden?</div>
+              <div class="text-[11px] text-slate-500 dark:text-slate-400">Erklärt die Suche nach 9 neuen Cas12a2-Orthologen (Permafrost &amp; Termitendarm)</div>
+            </div>
+            <button id="btn-pfs-toggle" onclick="togglePFS()" class="px-3.5 py-2 rounded-xl text-xs font-extrabold bg-emerald-600 text-white shadow shrink-0 transition">
+              PFS vorhanden: JA ✓
+            </button>
+          </div>
+
+          <div class="flex items-center justify-between gap-3 border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-slate-800 pt-3 lg:pt-0 lg:pl-4">
+            <div>
+              <div class="text-xs font-extrabold">Lipid-Nanopartikel (LNP) Organ-Verteilung:</div>
+              <div class="text-[11px] text-slate-500 dark:text-slate-400">Standard-LNP („Fetttröpfchen“ → Leber) vs. Ziel-Ligand-LNP</div>
+            </div>
+            <button id="btn-lnp-toggle" onclick="toggleLNPType()" class="px-3.5 py-2 rounded-xl text-xs font-extrabold bg-amber-600 text-white shadow shrink-0 transition">
+              Standard-LNP (Leber-Falle)
+            </button>
+          </div>
+        </div>
+
+        <!-- Dynamische Bühne: Gesunde Zelle vs. Tumorzelle + LNP-Leberfalle -->
+        <div id="onco-sim-stage" class="space-y-4"></div>
+      </div>
+
+      <!-- TEIL B: Das 40-%-DNA-zu-88-%-Protein-Paradoxon & Live-Codon-Editor Pos. 1069 -->
+      <div class="beamer-card rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-4 sm:p-6 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-teal-600 dark:text-teal-400">Teil B · Genetischer Code &amp; Struktur-Funktions-Beziehung</span>
+            <h2 class="text-base sm:text-xl font-extrabold text-slate-900 dark:text-white mt-0.5">
+              Das 40-%-DNA-zu-88-%-Protein-Paradoxon &amp; Live-Codon-Editor an Klammer-Position 1069
+            </h2>
+            <p class="text-xs text-slate-600 dark:text-slate-300 mt-1">
+              <strong>SuCas12a2</strong> (USA, <em>Sulfuricurvum</em>) und <strong>GeCas12a2</strong> (Zwingenberg, Bodenprobe) teilen nur ~40 % ihrer DNA-Basen, aber ~88 % identische Aminosäuren! Untersuche die Codons 1066–1072 rund um die aromatische Klammer <strong>Tyr1069</strong>:
+            </p>
+          </div>
+        </div>
+
+        <!-- Reales Codon-Alignment Pos. 1066–1072 -->
+        <div id="clamp-alignment-grid" class="overflow-x-auto"></div>
+
+        <!-- Interaktiver Live-Codon-Editor für Position 1069 + Visuelle Klammer-Vorschau -->
+        <div id="pos1069-editor-stage" class="grid grid-cols-1 lg:grid-cols-12 gap-5 items-center rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-4 sm:p-5">
+          <!-- Dynamisch via JS -->
+        </div>
+      </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- MODUL 5: SEK-II-AUFGABEN & SELBSTTEST                               -->
+    <!-- =================================================================== -->
+    <section id="module-5" class="hidden space-y-6">
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+
+        <!-- TEIL A: Interaktives 5-Fragen-Quiz mit Fortschritt & Punkteanzeige (7/12) -->
+        <div class="lg:col-span-7 beamer-card rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-4 sm:p-6 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400">Teil A · Interaktiver Lernziel-Check</span>
+              <h2 class="text-base sm:text-xl font-extrabold text-slate-900 dark:text-white">5-Fragen-Selbsttest (Sek II)</h2>
+            </div>
+            <div class="flex items-center gap-3">
+              <span id="quiz-score-badge" class="px-3 py-1 rounded-full text-xs font-extrabold bg-sky-500/15 text-sky-800 dark:text-sky-300 border border-sky-500/30">
+                Punkte: 0 / 5
+              </span>
+              <button onclick="resetQuiz()" class="text-xs font-bold text-slate-500 hover:text-slate-900 dark:hover:text-white underline">
+                Neu starten
+              </button>
+            </div>
+          </div>
+
+          <!-- Fortschrittsbalken Quiz -->
+          <div class="w-full h-2 rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
+            <div id="quiz-progress-bar" class="h-full bg-sky-500 transition-all duration-300" style="width: 0%"></div>
+          </div>
+
+          <div id="quiz-list" class="space-y-4"></div>
+        </div>
+
+        <!-- TEIL B: 4 kompetenzorientierte Oberstufen-/Abitur-/Reifeprüfungs-Aufgaben (5/12) -->
+        <div class="lg:col-span-5 beamer-card rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-4 sm:p-6 space-y-4">
+          <div class="border-b border-slate-200 dark:border-slate-800 pb-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">Teil B · Abitur / Reifeprüfung (AHS &amp; BHS)</span>
+            <h2 class="text-base sm:text-xl font-extrabold text-slate-900 dark:text-white">
+              4 kompetenzorientierte Oberstufen-Aufgaben
+            </h2>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Inklusive <em>Nature of Science</em>, Strukturchemie &amp; Pharmakokinetik – mit aufklappbaren Musterlösungen.</p>
+          </div>
+
+          <div class="space-y-3 text-xs sm:text-sm">
+            <!-- Aufgabe 1 -->
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4 space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-extrabold text-slate-900 dark:text-white">Aufgabe 1: „Nature of Science“ – Zufall &amp; Kooperation</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-700 dark:text-indigo-300">AFB II–III</span>
+              </div>
+              <p class="text-slate-700 dark:text-slate-300 leading-relaxed text-xs">
+                2015 suchte Matthew Begemann eigentlich nach einer Genschere für Nutzpflanzen, fand aber ein zelltötendes Enzym. 2023 trafen die US-Forscher (Jackson/Beisel) auf einer Konferenz auf das Zwingenberger Team (Scholz/Akribion) mit fast identischen unpublizierten Daten. Arbeiten Sie heraus, warum beide Episoden Musterbeispiele moderner Naturwissenschaft sind.
+              </p>
+              <button onclick="toggleSolution('abi-sol-1')" class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 hover:underline">
+                Musterlösung ein-/ausblenden ▾
+              </button>
+              <div id="abi-sol-1" class="hidden pt-2.5 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 leading-relaxed space-y-1.5">
+                <p><strong>1. Serendipität &amp; Grundlagenforschung:</strong> Ein vermeintlicher „Fehlschlag“ (Zelltod statt gezielter Gen-Editierung) wurde nicht verworfen, sondern mechanistisch hinterfragt (RNA-Trigger statt DNA-Trigger). Erst das Verständnis dieser bakteriellen Abwehr eröffnete die Krebstherapie-Anwendung.</p>
+                <p><strong>2. Kooperation statt destruktiver Konkurrenz (2023):</strong> Durch unabhängige Entdeckung in Boden-/Wasserproben bestätigten sich beide Teams gegenseitig die Reproduzierbarkeit (SuCas12a2 &amp; GeCas12a2) und teilten biochemische Erkenntnisse bei getrennten klinischen Pipelines.</p>
+              </div>
+            </div>
+
+            <!-- Aufgabe 2 -->
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4 space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-extrabold text-slate-900 dark:text-white">Aufgabe 2: Aromatische Aminosäuren &amp; Mutante Y1069A</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300">AFB II</span>
+              </div>
+              <p class="text-slate-700 dark:text-slate-300 leading-relaxed text-xs">
+                Erklären Sie auf Basis zwischenmolekularer Wechselwirkungen (PDB 8D4A), wie Tyr465, Tyr1069 und Tyr1080 Doppelstrang-DNA spaltbar machen und weshalb der Austausch zu Alanin (Y1069A) die dsDNA-Spaltung aufhebt, Einzelstrang-DNA aber weiterhin geschnitten wird.
+              </p>
+              <button onclick="toggleSolution('abi-sol-2')" class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 hover:underline">
+                Musterlösung ein-/ausblenden ▾
+              </button>
+              <div id="abi-sol-2" class="hidden pt-2.5 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                Tyrosin besitzt einen planaren, delokalisierten π-Elektronenring (Phenol-Seitenkette), der über <strong>π-π-Stacking</strong> wie ein mechanischer Keil zwischen benachbarte Nukleinbasen interkaliert. Dies erzwingt den 90°-Knick der Helix und bricht lokal die Wasserstoffbrücken zwischen den Basenpaaren auf (<em>local melting</em>). Alanin (Methylgruppe) hat kein aromatisches π-System: Intakte dsDNA bleibt starr und gelangt nicht in die enge RuvC-Spalte, während flexible ssDNA auch ohne Aufschmelz-Keil direkt zu den Mg²⁺-Ionen passt.
+              </div>
+            </div>
+
+            <!-- Aufgabe 3 -->
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4 space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-extrabold text-slate-900 dark:text-white">Aufgabe 3: Biomembran-Polarität &amp; LNP-Lebertropismus</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-sky-500/15 text-sky-700 dark:text-sky-300">AFB II</span>
+              </div>
+              <p class="text-slate-700 dark:text-slate-300 leading-relaxed text-xs">
+                Begründen Sie aus dem Bau von Nukleinsäuren und Biomembranen, warum Cas12a2-mRNA und Leit-RNA in Lipid-Nanopartikel (LNPs) eingeschlossen werden müssen und weshalb Standard-LNPs bevorzugt in Leberzellen (Hepatozyten) landen.
+              </p>
+              <button onclick="toggleSolution('abi-sol-3')" class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 hover:underline">
+                Musterlösung ein-/ausblenden ▾
+              </button>
+              <div id="abi-sol-3" class="hidden pt-2.5 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                RNA-Moleküle sind große, stark hydrophile Polyanionen (negativ geladene Phosphodiester-Gruppen), die das lipophile Innere der Phospholipid-Doppelschicht nicht passieren können und im Blut durch RNasen abgebaut würden. Ionisierbare Lipide im LNP komplexieren die RNA und ermöglichen die Endozytose. Im Blutserum lagert sich jedoch unpolares <strong>Apolipoprotein E (ApoE)</strong> an die LNP-Oberfläche an, sodass der Körper die Partikel wie Chylomikronen/Fetttröpfchen erkennt und über LDL-Rezeptoren in Hepatozyten aufnimmt.
+              </div>
+            </div>
+
+            <!-- Aufgabe 4 -->
+            <div class="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 p-4 space-y-2">
+              <div class="flex items-center justify-between gap-2">
+                <span class="font-extrabold text-slate-900 dark:text-white">Aufgabe 4: „Undruggable“ p53 – Docking vs. mRNA-Shredder</span>
+                <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-500/15 text-rose-700 dark:text-rose-300">AFB III</span>
+              </div>
+              <p class="text-slate-700 dark:text-slate-300 leading-relaxed text-xs">
+                Vergleichen Sie die Wirkstrategie klassischer Enzym-Inhibitoren mit dem SuCas12a2-Ansatz bei Tumoren mit <em>p53</em>-Punktmutation und beurteilen Sie Chancen sowie aktuelle Limitationen (PFS, Delivery).
+              </p>
+              <button onclick="toggleSolution('abi-sol-4')" class="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 hover:underline">
+                Musterlösung ein-/ausblenden ▾
+              </button>
+              <div id="abi-sol-4" class="hidden pt-2.5 border-t border-slate-200 dark:border-slate-800 text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+                Mutiertes p53 ist ein ausgefallener Tumorsuppressor ohne definierte hydrophobe Bindetasche; ein kleiner Inhibitor kann eine verlorene Schutzfunktion kaum wiederherstellen. SuCas12a2 prüft stattdessen die <em>p53</em>-mRNA über hochspezifische Watson-Crick-Wasserstoffbrücken: Schon 1 mutiertes Basenpaar schaltet selektiv in Krebszellen den DNA-Shredder frei. <strong>Limitationen:</strong> Neben der Mutation muss ein passendes PFS-Motiv liegen, und LNPs erreichen extrahepatische Tumoren derzeit noch unvollständig.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 1: 📖 KOMPAKT-INFO (60 SEKUNDEN)                                -->
+  <!-- ===================================================================== -->
+  <div id="kompakt-modal" class="hidden fixed inset-0 z-50 bg-slate-950/75 backdrop-blur-sm flex items-center justify-center p-4" onclick="backdropClose(event, 'kompakt-modal')">
+    <div class="max-w-3xl w-full rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+      <div class="px-6 py-4 bg-gradient-to-r from-amber-500 via-orange-600 to-rose-600 text-white flex items-center justify-between gap-3">
+        <div>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-amber-100">Forschungs-Update · Nature &amp; C&amp;EN (Oktober 2026)</span>
+          <h2 class="text-base sm:text-xl font-extrabold">Das Wichtigste in 60 Sekunden: Was macht CRISPR-Cas12a2 besonders?</h2>
+        </div>
+        <button onclick="closeModal('kompakt-modal')" class="w-8 h-8 rounded-xl bg-white/20 hover:bg-white/30 font-bold text-lg flex items-center justify-center shrink-0">✕</button>
+      </div>
+
+      <div class="p-5 sm:p-6 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs sm:text-sm">
+        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1.5">
+          <div class="font-extrabold text-sky-600 dark:text-sky-400">1. Bakterieller Altruismus (Abortive Infektion)</div>
+          <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+            Anders als Cas9 editiert <strong>Cas12a2</strong> keine Gene, sondern schützt Bakterienkolonien durch kontrollierten Selbstopfer-Tod: Erkennt es fremde Virus-RNA, zerschreddert es die gesamte DNA der befallenen Zelle, bevor neue Viren entstehen.
+          </p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1.5">
+          <div class="font-extrabold text-emerald-600 dark:text-emerald-400">2. Die 50-Å-Sicherheitsbremse</div>
+          <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+            In gesunden Zellen ist Cas12a2 fest verschlossen (PDB <span class="font-mono">8D49</span>). Erst das Andocken einer exakt passenden <strong>Ziel-mRNA + PFS</strong> klappt das Enzym um <strong>50 Å</strong> auf und drückt beliebige Zell-DNA im <strong>90°-Knick</strong> in die RuvC-Schere (<span class="font-mono">8D4A</span>).
+          </p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1.5">
+          <div class="font-extrabold text-rose-600 dark:text-rose-400">3. Präzisions-Krebstherapie (p53 &amp; HPV E6/E7)</div>
+          <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+            Zwei <em>Nature</em>-Studien (2026, Confluence/Doudna-Labor &amp; Akribion Therapeutics) zeigen: Cas12a2 eliminiert präklinisch <strong>~94 % HPV-positiver Tumorzellen</strong> (über E6/E7-mRNA) und erkennt „undruggable“ <strong><em>p53</em>-Tumoren</strong> anhand einer einzigen Punktmutation!
+          </p>
+        </div>
+
+        <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-1.5">
+          <div class="font-extrabold text-amber-600 dark:text-amber-400">4. Aktuelle Hürden auf dem Weg in die Klinik (~2030)</div>
+          <p class="text-slate-700 dark:text-slate-300 leading-relaxed">
+            Verpackt als mRNA + Leit-RNA in <strong>Lipid-Nanopartikeln (LNPs)</strong> wird der Großteil im Blut als „Fetttröpfchen“ in die <strong>Leber</strong> umgeleitet. Zudem benötigt jede Zielmutation eine benachbarte <strong>PFS-Ankersequenz</strong>.
+          </p>
+        </div>
+      </div>
+
+      <div class="px-6 py-3.5 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between text-xs">
+        <span class="text-slate-500 dark:text-slate-400">Tipp: Rechts oben lässt sich jederzeit der <strong>📽️ Beamer-Modus</strong> zuschalten.</span>
+        <button onclick="closeModal('kompakt-modal')" class="px-4 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold transition">Direkt ins Labor starten</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- MODAL 2: 🛠️ KI-WORKFLOW (BEHIND THE SCENES – VCÖ-KONGRESS JKU LINZ)   -->
+  <!-- ===================================================================== -->
+  <div id="workflow-modal" class="hidden fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4" onclick="backdropClose(event, 'workflow-modal')">
+    <div class="max-w-4xl w-full rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-2xl overflow-hidden max-h-[92vh] flex flex-col">
+
+      <!-- Modal-Header -->
+      <div class="px-6 py-4 bg-gradient-to-r from-indigo-600 via-violet-600 to-sky-600 text-white flex items-center justify-between gap-3">
+        <div>
+          <span class="text-[11px] font-bold uppercase tracking-wider text-indigo-100">VCÖ-ChemielehrerInnenkongress · JKU Linz („CHEMIE mit KI“)</span>
+          <h2 class="text-base sm:text-xl font-extrabold">
+            🛠️ Behind the Scenes: Vom aktuellen Fachartikel zur fertigen Unterrichts-App in wenigen Prompts
+          </h2>
+        </div>
+        <button onclick="closeModal('workflow-modal')" class="w-8 h-8 rounded-xl bg-white/20 hover:bg-white/30 font-bold text-lg flex items-center justify-center shrink-0">✕</button>
+      </div>
+
+      <!-- Scrollbarer Inhalt: (a) 4-Schritte-Timeline, (b) Regie-Tabelle, (c) 4 kopierbare Original-Prompts -->
+      <div class="p-5 sm:p-6 overflow-y-auto space-y-6 text-xs sm:text-sm">
+
+        <!-- (a) Visuelle 4-Schritte-Timeline -->
+        <div>
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-3">
+            a) Visuelle 4-Schritte-Entwicklungstimeline (~30–45 Min. Gesamtzeit)
+          </h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div class="p-3.5 rounded-2xl bg-indigo-50/70 dark:bg-slate-950 border border-indigo-200 dark:border-indigo-500/30 space-y-1">
+              <span class="inline-block px-2 py-0.5 rounded-md bg-indigo-600 text-white text-[11px] font-extrabold">Schritt 1 · Impuls</span>
+              <div class="font-bold text-slate-900 dark:text-white">Didaktische Potenzialprüfung</div>
+              <p class="text-xs text-slate-600 dark:text-slate-400">Aktueller C&amp;EN-Bericht (10/2026) wird als Gegenmodell zum klassischen Liganden-Docking eingeordnet.</p>
+            </div>
+            <div class="p-3.5 rounded-2xl bg-sky-50/70 dark:bg-slate-950 border border-sky-200 dark:border-sky-500/30 space-y-1">
+              <span class="inline-block px-2 py-0.5 rounded-md bg-sky-600 text-white text-[11px] font-extrabold">Schritt 2 · Strukturdaten</span>
+              <div class="font-bold text-slate-900 dark:text-white">RCSB-PDB-Scouting</div>
+              <p class="text-xs text-slate-600 dark:text-slate-400">Identifikation der konsistenten Cryo-EM-Serie (<span class="font-mono">8D49, 8D4B, 8D4A</span>) inkl. Ketten-IDs &amp; Tyrosin-Klammern.</p>
+            </div>
+            <div class="p-3.5 rounded-2xl bg-emerald-50/70 dark:bg-slate-950 border border-emerald-200 dark:border-emerald-500/30 space-y-1">
+              <span class="inline-block px-2 py-0.5 rounded-md bg-emerald-600 text-white text-[11px] font-extrabold">Schritt 3 · Primärdaten</span>
+              <div class="font-bold text-slate-900 dark:text-white">Erdung am Artikeltext</div>
+              <p class="text-xs text-slate-600 dark:text-slate-400">Verknüpfung mit realen Studiendaten (<em>p53</em>, HPV E6/E7, 40 % DNA vs. 88 % Protein, LNP-Leberfalle).</p>
+            </div>
+            <div class="p-3.5 rounded-2xl bg-amber-50/70 dark:bg-slate-950 border border-amber-200 dark:border-amber-500/30 space-y-1">
+              <span class="inline-block px-2 py-0.5 rounded-md bg-amber-600 text-white text-[11px] font-extrabold">Schritt 4 · Didaktik-Ausbau</span>
+              <div class="font-bold text-slate-900 dark:text-white">Modulares CRISPR-LAB</div>
+              <p class="text-xs text-slate-600 dark:text-slate-400">2D-Einstieg vor 3D-Komplexität, Cas9-Vergleich (<span class="font-mono">5F9R</span>), Beamer-Modus &amp; GitHub-Pages-Einzeldatei.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- (b) Gegenüberstellungstabelle: Didaktische Regie der Lehrkraft vs. KI als Co-Pilot -->
+        <div>
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-2.5">
+            b) Rollenverteilung: Warum die fachdidaktische Expertise der Lehrkraft entscheidend bleibt
+          </h3>
+          <div class="overflow-x-auto rounded-2xl border border-slate-200 dark:border-slate-800">
+            <table class="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr class="bg-slate-100 dark:bg-slate-950 border-b border-slate-200 dark:border-slate-800">
+                  <th class="p-3 font-extrabold text-indigo-700 dark:text-indigo-300 w-1/2">👩‍🏫 Didaktische Regie der Lehrkraft (ROKA / Steuerung)</th>
+                  <th class="p-3 font-extrabold text-sky-700 dark:text-sky-300 w-1/2">🤖 Rolle der KI (Technischer &amp; strukturbiologischer Co-Pilot)</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-slate-200 dark:divide-slate-800">
+                <tr>
+                  <td class="p-3"><strong>Themenauswahl &amp; Relevanzprüfung:</strong> Erkennt den Alltags- und Bildungsgehalt aktueller Spitzenforschung und schlägt die Brücke zu vorangegangenen Einheiten (Wirkstoff-Docking).</td>
+                  <td class="p-3"><strong>Strukturbiologische Tiefenrecherche:</strong> Findet zusammenpassende Wildtyp-PDB-Einträge, prüft Legacy-PDB- vs. mmCIF-Kettenbezeichnungen (<span class="font-mono">Chain G/E</span>) und katalytische Triaden.</td>
+                </tr>
+                <tr>
+                  <td class="p-3"><strong>Didaktische Reduktion &amp; Progression:</strong> Fordert zuerst ein reduziertes 2D-Prinzipschema mit 60-Sekunden-Zusammenfassung ein, bevor zehntausende Atome in 3D gezeigt werden.</td>
+                  <td class="p-3"><strong>Code-Synthese ohne Infrastruktur-Hürden:</strong> Generiert sofort lauffähigen Single-File-Code (SVG-Animationen + 3Dmol.js mit RAM-Caching &amp; Kamerakopplung) für GitHub Pages.</td>
+                </tr>
+                <tr>
+                  <td class="p-3"><strong>Lehrplan-Anbindung &amp; Qualitätskontrolle:</strong> Verankert Sek-II-Basiskonzepte (degenerierter Code, π-Stacking, Biomembran-Polarität) und prüft die Praxistauglichkeit im Unterricht.</td>
+                  <td class="p-3"><strong>Interaktive Lernaufgaben auf Abruf:</strong> Übersetzt die Primärdaten aus dem Fachartikel in Entscheidungstrainer, Live-Codon-Editoren (<span class="font-mono">Y1069A</span>) und gestufte Reifeprüfungsaufgaben.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- (c) Die 4 realen Entwicklungs-Prompts zum Aufklappen inklusive Kopier-Button -->
+        <div>
+          <h3 class="text-xs font-extrabold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 mb-2.5">
+            c) Die 4 realen Entwicklungs-Prompts zum Aufklappen &amp; Nachbauen
+          </h3>
+          <div class="space-y-2.5" id="workflow-prompts-list">
+            <!-- Dynamisch per JS gerendert -->
+          </div>
+        </div>
+      </div>
+
+      <!-- Modal-Footer -->
+      <div class="px-6 py-3.5 bg-slate-50 dark:bg-slate-950 border-t border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <span class="text-slate-500 dark:text-slate-400">Strukturierte Prompt-Steuerung (Rolle · Aufgabe · Kontext · Ausgabeformat) spart Entwicklungszeit und sichert fachliche Tiefe.</span>
+        <button onclick="closeModal('workflow-modal')" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold transition">Schließen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================================================================== -->
+  <!-- FOOTER INKLUSIVE VERLINKUNG DES KI-WORKFLOWS                          -->
+  <!-- ===================================================================== -->
+  <footer class="border-t border-slate-200 dark:border-slate-800 py-3.5 px-4 sm:px-6 text-center text-xs text-slate-500 dark:text-slate-400 flex flex-wrap items-center justify-center gap-x-4 gap-y-1">
+    <span>CRISPR-LAB · Single-File Lernumgebung Sek II (RCSB PDB: <span class="font-mono">8D49, 8D4B, 8D4A, 5F9R</span> · <em>Nature</em> / C&amp;EN 10/2026)</span>
+    <span>·</span>
+    <button onclick="openModal('workflow-modal')" class="font-bold text-indigo-600 dark:text-indigo-400 hover:underline">
+      🛠️ KI-Workflow &amp; Prompt-Dokumentation (VCÖ Linz) öffnen
+    </button>
+  </footer>
+
+  <!-- ===================================================================== -->
+  <!-- KOMPLETTE INTERAKTIVE LOGIK                                           -->
+  <!-- ===================================================================== -->
+  <script>
+    // =========================================================================
+    // 1. ZENTRALER ZUSTAND (STATE)
+    // =========================================================================
+    const state = {
+      dark: true,
+      beamer: false,
+      activeTab: 1,
+
+      // Modul 1: 2D-Schema
+      schemaState: 1,
+      autoAnimTimer: null,
+
+      // Modul 2: Werkzeug-Duell & Trainer
+      showDockingCol: false,
+      activeCaseIdx: 0,
+      solvedCases: {},
+      selectedCaseOpt: {},
+
+      // Modul 3: 3D-Struktur-Labor
+      labViewMode: 'single',   // 'single' | 'split_states' | 'split_duel'
+      singlePDB: '8D4A',       // '8D49' | '8D4B' | '8D4A' | '5F9R'
+      hotspot: 'overview',     // 'overview' | 'ruvc' | 'clamps' | 'signal' | 'rnaduplex'
+      surfaceOn: false,
+      syncCameras: true,
+      spinOn: false,
+      labelsOn: true,
+
+      // Modul 4: Onkologie & Genetischer Code
+      oncoScenario: 'hpv',     // 'hpv' | 'p53' | 'chemo'
+      pfsPresent: true,
+      lnpTargeted: false,
+      codon1069: 'TAT',        // Wildtyp SuCas12a2 Tyr1069
+
+      // Modul 5: Quiz
+      quizAnswers: {}
+    };
+
+    const pdbMemoryCache = {};
+
+    function makeRange(start, end) {
+      const arr = [];
+      for (let i = start; i <= end; i++) arr.push(i);
+      return arr;
+    }
+    const SIGNAL_DOMAIN_RESI = makeRange(938, 1030);
+
+    // =========================================================================
+    // 2. GLOBALE HEADER-STEUERUNG, MODALS & CLIPBOARD (OHNE ALERT)
+    // =========================================================================
+    function openModal(id) {
+      document.getElementById(id).classList.remove('hidden');
+    }
+    function closeModal(id) {
+      document.getElementById(id).classList.add('hidden');
+    }
+    function backdropClose(e, id) {
+      if (e.target.id === id) closeModal(id);
+    }
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeModal('kompakt-modal');
+        closeModal('workflow-modal');
+      }
+    });
+
+    function toggleBeamerMode() {
+      state.beamer = !state.beamer;
+      document.documentElement.classList.toggle('beamer-mode', state.beamer);
+      const st = document.getElementById('beamer-status');
+      st.textContent = state.beamer ? 'Ein' : 'Aus';
+      st.className = state.beamer
+        ? 'font-extrabold text-amber-600 dark:text-amber-400'
+        : 'font-bold text-slate-500 dark:text-slate-400';
+      resizeAll3DViewers();
+    }
+
+    function toggleTheme() {
+      state.dark = !state.dark;
+      document.documentElement.classList.toggle('dark', state.dark);
+      document.getElementById('theme-icon').textContent = state.dark ? '☀️' : '🌙';
+
+      const bgHex = state.dark ? '#090d16' : '#f1f5f9';
+      [vSingle, vLeft, vRight].forEach(v => {
+        if (v) {
+          v.setBackgroundColor(bgHex);
+          v.render();
+        }
+      });
+    }
+
+    function switchMainTab(tabNum) {
+      state.activeTab = tabNum;
+      if (tabNum !== 1 && state.autoAnimTimer) stopAutoAnim();
+
+      for (let i = 1; i <= 5; i++) {
+        const sec = document.getElementById(`module-${i}`);
+        const btn = document.getElementById(`tab-btn-${i}`);
+        const isAct = i === tabNum;
+        sec.classList.toggle('hidden', !isAct);
+        const spanCls = i === 5 ? 'col-span-2 md:col-span-1 ' : '';
+        btn.className = spanCls + (isAct
+          ? 'px-3 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition text-center bg-sky-600 text-white shadow-md'
+          : 'px-3 py-2 rounded-xl text-xs sm:text-sm font-semibold transition text-center text-slate-600 dark:text-slate-400 hover:bg-slate-200/70 dark:hover:bg-slate-800/70');
+      }
+
+      if (tabNum === 3) {
+        initAndRender3DLab();
+      }
+    }
+
+    /** Zuverlässiges Kopieren per document.execCommand('copy') für iFrame/Canvas-Umgebungen */
+    function copyPromptText(idx) {
+      const text = WORKFLOW_PROMPTS[idx].prompt;
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      ta.style.position = 'fixed';
+      ta.style.opacity = '0';
+      document.body.appendChild(ta);
+      ta.focus();
+      ta.select();
+      try {
+        document.execCommand('copy');
+        const btn = document.getElementById(`copy-prompt-btn-${idx}`);
+        const orig = btn.innerHTML;
+        btn.innerHTML = '✅ In Zwischenablage kopiert!';
+        btn.classList.add('bg-emerald-600', 'text-white');
+        setTimeout(() => {
+          btn.innerHTML = orig;
+          btn.classList.remove('bg-emerald-600', 'text-white');
+        }, 2000);
+      } catch (_) {}
+      document.body.removeChild(ta);
+    }
+
+    const WORKFLOW_PROMPTS = [
+      {
+        step: 'Prompt 1 · Didaktische Potenzialanalyse & Vergleich zum Docking',
+        prompt: 'Würde sich dieses Thema (C&EN-Artikel: "A novel CRISPR system shreds cellular DNA" – CRISPR-Cas12a2) für den Chemie- und Biochemieunterricht der Sekundarstufe II und molekulare Visualisierungen eignen – ähnlich wie beim Wirkstoff-Docking kleiner Moleküle?'
+      },
+      {
+        step: 'Prompt 2 · Gezieltes PDB-Struktur-Scouting für 3Dmol.js',
+        prompt: 'Suche passende experimentelle Cryo-EM-Strukturen von Cas12a2 im inaktiven, RNA-aktivierten und aktiven DNA-schreddernden Zustand aus der RCSB PDB für einen interaktiven 3Dmol.js-Vergleich heraus (inklusive exakter Chain-IDs und katalytischer Hotspot-Aminosäuren).'
+      },
+      {
+        step: 'Prompt 3 · Fachliche Erdung mit den Studiendaten (p53, HPV, 40 % vs. 88 %)',
+        prompt: 'Hier ist der Volltext des C&EN-Artikels (SuCas12a2 & GeCas12a2, 88 % gleiche Aminosäuren bei nur 40 % DNA-Ähnlichkeit, Einzelbasen-Selektivität bei mutiertem p53, ~94 % Tumorzelltod bei HPV E6/E7, LNP-Leberfalle). Erstelle daraus eine deutschsprachige Single-File-HTML-App mit 3Dmol.js.'
+      },
+      {
+        step: 'Prompt 4 · Didaktische Ausgestaltung zum modularen „CRISPR-LAB“',
+        prompt: 'Baue die Anwendung zu einem mehrstufigen CRISPR-LAB aus: (1) Reduziertes animiertes 2D-Einstiegsschema + 60-Sekunden-Kompakt-Popup, (2) Systematischer Werkzeug-Vergleich mit SpCas9 (PDB 5F9R) und klassischem Wirkstoff-Docking, (3) Side-by-Side 3D-Split-Screen mit Kamerakopplung, (4) Beamer-Modus & Behind-the-Scenes-Dokumentation für den Lehrkräftevortrag.'
+      }
+    ];
+
+    function renderWorkflowPrompts() {
+      const container = document.getElementById('workflow-prompts-list');
+      container.innerHTML = WORKFLOW_PROMPTS.map((item, idx) => `
+        <details class="group rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 p-3.5">
+          <summary class="cursor-pointer font-extrabold text-slate-900 dark:text-white flex items-center justify-between">
+            <span>${item.step}</span>
+            <span class="text-indigo-600 dark:text-indigo-400 text-xs group-open:rotate-180 transition-transform">▾</span>
+          </summary>
+          <div class="mt-3 space-y-2.5">
+            <pre class="p-3 rounded-xl bg-slate-900 text-slate-100 font-mono text-xs whitespace-pre-wrap leading-relaxed border border-slate-800">${item.prompt}</pre>
+            <div class="flex justify-end">
+              <button id="copy-prompt-btn-${idx}" onclick="copyPromptText(${idx})" class="px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/25 transition">
+                📋 Prompt kopieren
+              </button>
+            </div>
+          </div>
+        </details>
+      `).join('');
+    }
+
+    // =========================================================================
+    // 3. MODUL 1: DREISTUFIGES 2D-SCHEMA MIT AUTO-ANIMATION
+    // =========================================================================
+    const SCHEMA_STATES = {
+      1: {
+        pdb: '8D49',
+        hotspot: 'ruvc',
+        headline: 'Zustand 1: Geschlossene „Austern-Form“ (PDB 8D49 · 100 % Schutz in gesunden Zellen)',
+        badge: 'Autoinhibiert · 0 % Spaltaktivität',
+        badgeCls: 'bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30',
+        title: 'Mechanische Selbsthemmung schützt gesunde Körperzellen',
+        metrics: [
+          ['PDB-Referenz & Auflösung', '<span class="font-mono font-bold">8D49</span> · Cryo-EM (3,20 Å · Binärer Komplex)'],
+          ['Beteiligte Ketten', 'Cas12a2 (Kette A) + programmierbare crRNA (Kette B, 26 nt)'],
+          ['Domänen-Stellung', 'REC1/REC2-Lappen geschlossen; Insertion-Domäne (AS 938–1030) in Ruhe'],
+          ['RuvC & Zell-DNA', 'Katalytische Triade (<span class="font-mono">D848, E1063, D1213</span>) komplett verdeckt – dsDNA prallt ab!']
+        ]
+      },
+      2: {
+        pdb: '8D4B',
+        hotspot: 'signal',
+        headline: 'Zustand 2: Allosterische 50-Å-Entriegelung durch Ziel-mRNA (PDB 8D4B)',
+        badge: 'Allosterisch geschaltet · RuvC exponiert',
+        badgeCls: 'bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30',
+        title: 'Komplementäre Ziel-mRNA + PFS lösen die molekulare Sicherheitsbremse',
+        metrics: [
+          ['PDB-Referenz & Auflösung', '<span class="font-mono font-bold">8D4B</span> · Cryo-EM (2,92 Å · Ternärer Komplex)'],
+          ['Auslösender Trigger', 'Ziel-mRNA (Kette C, 28 nt) mit <span class="font-mono font-bold">5\'-GAAAG-3\'</span> PFS hybridisiert mit crRNA'],
+          ['Konformations-Sprung', 'REC-Lappen klappen <strong>~50 Å</strong> auf; Insertion-Domäne verschiebt sich um <strong>~15 Å</strong>'],
+          ['Folge am RuvC-Zentrum', 'Positiv geladene RuvC-Spalte mit zwei <span class="font-mono">Mg²⁺</span>-Ionen liegt frei an der Oberfläche']
+        ]
+      },
+      3: {
+        pdb: '8D4A',
+        hotspot: 'clamps',
+        headline: 'Zustand 3: 90°-DNA-Knick & Kollateral-Shredding (PDB 8D4A · Zelltod der Tumorzelle)',
+        badge: 'Voll aktiv · Kollateraler DNA-Shredder',
+        badgeCls: 'bg-rose-500/15 text-rose-800 dark:text-rose-300 border-rose-500/30',
+        title: 'Aromatische Tyrosin-Klammern brechen die DNA-Doppelhelix im 90°-Winkel auf',
+        metrics: [
+          ['PDB-Referenz & Auflösung', '<span class="font-mono font-bold">8D4A</span> · Cryo-EM (2,74 Å · Quaternärer Komplex)'],
+          ['Eingefangenes Substrat', 'Beliebige zelluläre dsDNA (Ketten D &amp; G/E) ohne Sequenzprüfung'],
+          ['Molekulare Brechstange', '3 Tyrosin-Reste (<span class="font-mono">Tyr465, Tyr1069, Tyr1080</span>) erzwingen per π-Stacking <strong>90°-Knick</strong> &amp; <em>local melting</em>'],
+          ['Zelluläres Ergebnis', 'Sequenzielle Hydrolyse beider DNA-Stränge im RuvC-Zentrum → <strong>programmierter Zelltod</strong>']
+        ]
+      }
+    };
+
+    function setSchemaState(st) {
+      state.schemaState = st;
+      document.getElementById('schema-progress-bar').style.width = `${(st / 3) * 100}%`;
+
+      for (let i = 1; i <= 3; i++) {
+        const btn = document.getElementById(`schema-tab-${i}`);
+        btn.className = i === st
+          ? 'text-left p-3.5 rounded-2xl border-2 border-sky-500 bg-sky-50/70 dark:bg-sky-950/30 shadow-md transition'
+          : 'text-left p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 hover:border-slate-400 transition';
+      }
+
+      const d = SCHEMA_STATES[st];
+      document.getElementById('svg-headline').textContent = d.headline;
+
+      const rec = document.getElementById('svg-rec');
+      const recSub = document.getElementById('svg-rec-sub');
+      const ins = document.getElementById('svg-insertion');
+      const insSub = document.getElementById('svg-insertion-sub');
+      const mrna = document.getElementById('svg-target-mrna');
+      const st1Guard = document.getElementById('svg-state1-guard');
+      const openInd = document.getElementById('svg-open-indicator');
+      const st2Ready = document.getElementById('svg-state2-ready');
+      const st3Shred = document.getElementById('svg-state3-shred');
+
+      if (st === 1) {
+        rec.style.transform = 'translate(0px, 0px) rotate(0deg)';
+        recSub.textContent = 'Versperren in gesunden Zellen den RuvC-Kanal';
+        ins.style.transform = 'translate(0px, 0px)';
+        insSub.textContent = 'AS 938–1030 (Ruhelage)';
+        mrna.style.opacity = '0';
+        mrna.style.transform = 'translateY(-28px)';
+        st1Guard.style.opacity = '1';
+        openInd.style.opacity = '0';
+        st2Ready.style.opacity = '0';
+        st3Shred.style.opacity = '0';
+      } else if (st === 2) {
+        rec.style.transform = 'translate(-8px, -74px) rotate(-4deg)';
+        recSub.textContent = 'Um ~50 Å aufgeklappt (RNA-Kanal offen)';
+        ins.style.transform = 'translate(28px, -18px)';
+        insSub.textContent = '~15 Å Shift (Signal aktiv!)';
+        mrna.style.opacity = '1';
+        mrna.style.transform = 'translateY(0px)';
+        st1Guard.style.opacity = '0';
+        openInd.style.opacity = '1';
+        st2Ready.style.opacity = '1';
+        st3Shred.style.opacity = '0';
+      } else {
+        rec.style.transform = 'translate(-8px, -74px) rotate(-4deg)';
+        recSub.textContent = 'Hält crRNA:mRNA-Hybrid stabil verankert';
+        ins.style.transform = 'translate(28px, -18px)';
+        insSub.textContent = 'Hält RuvC dauerhaft offen';
+        mrna.style.opacity = '1';
+        mrna.style.transform = 'translateY(0px)';
+        st1Guard.style.opacity = '0';
+        openInd.style.opacity = '1';
+        st2Ready.style.opacity = '0';
+        st3Shred.style.opacity = '1';
+      }
+
+      document.getElementById('schema-detail-panel').innerHTML = `
+        <div class="flex items-center justify-between gap-2 flex-wrap">
+          <span class="px-3 py-1 rounded-full text-xs font-extrabold border ${d.badgeCls}">${d.badge}</span>
+          <span class="font-mono text-xs font-bold text-slate-500">RCSB: ${d.pdb}</span>
+        </div>
+        <h3 class="text-base sm:text-lg font-extrabold text-slate-900 dark:text-white leading-snug">${d.title}</h3>
+        <div class="space-y-2.5">
+          ${d.metrics.map(m => `
+            <div class="p-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+              <div class="text-[11px] font-bold uppercase tracking-wider text-slate-400">${m[0]}</div>
+              <div class="text-xs sm:text-sm text-slate-800 dark:text-slate-200 mt-0.5">${m[1]}</div>
+            </div>
+          `).join('')}
+        </div>
+        <button onclick="jumpToLabSingle('${d.pdb}', '${d.hotspot}')" class="w-full py-3 px-4 rounded-2xl bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white text-xs sm:text-sm font-extrabold shadow-lg shadow-sky-600/20 transition">
+          🔬 Diesen Zustand (${d.pdb}) jetzt live in 3D (Cryo-EM) untersuchen →
+        </button>
+      `;
+    }
+
+    function stepSchema(delta) {
+      let next = state.schemaState + delta;
+      if (next > 3) next = 1;
+      if (next < 1) next = 3;
+      setSchemaState(next);
+    }
+
+    function stopAutoAnim() {
+      if (state.autoAnimTimer) {
+        clearInterval(state.autoAnimTimer);
+        state.autoAnimTimer = null;
+      }
+      document.getElementById('auto-anim-label').textContent = '▶ Auto-Animation abspielen';
+    }
+
+    function toggleAutoAnim() {
+      if (state.autoAnimTimer) {
+        stopAutoAnim();
+      } else {
+        stepSchema(1);
+        document.getElementById('auto-anim-label').textContent = '⏸ Animation pausieren';
+        state.autoAnimTimer = setInterval(() => stepSchema(1), 2800);
+      }
+    }
+
+    // =========================================================================
+    // 4. MODUL 2: WERKZEUG-DUELL & THERAPIE-ENTSCHEIDUNGSTRAINER
+    // =========================================================================
+    function toggleDockingColumn() {
+      state.showDockingCol = !state.showDockingCol;
+      document.querySelectorAll('.docking-col').forEach(el => {
+        el.classList.toggle('hidden', !state.showDockingCol);
+      });
+      document.getElementById('docking-col-label').textContent = state.showDockingCol
+        ? '➖ 3. Säule (Klassisches Wirkstoff-Docking) wieder ausblenden'
+        : '➕ Klassisches Wirkstoff-Docking (z. B. COX-2-Hemmung mit Ibuprofen) als 3. Säule vergleichen';
+    }
+
+    const CLINICAL_CASES = [
+      {
+        short: '1. Sichelzellanämie (Stammzellen)',
+        title: 'Fall 1: Monogene Erbkrankheit – Sichelzellanämie in Blutstammzellen',
+        desc: 'Blutbildende Stammzellen einer Patientin tragen eine Punktmutation im β-Globin-Gen. Ziel der Therapie ist eine dauerhafte genetische Korrektur – die kostbaren Stammzellen müssen zwingend überleben und lebenslang gesunde Erythrozyten bilden.',
+        correct: 'cas9',
+        feedback: {
+          cas9: '✅ Exakt richtig! Hier wird ein präzises Gen-Skalpell (CRISPR-Cas9 bzw. Base-Editing wie bei Casgevy) benötigt, bei dem die editierten Blutstammzellen unversehrt weiterleben.',
+          cas12a2: '❌ Schwerwiegender Fehler: Cas12a2 würde nach Erkennung der mutierten mRNA die gesamte DNA der Blutstammzellen zerschreddern und das Knochenmark abtöten!',
+          docking: '❌ Nicht kurativ: Ein kleiner Wirkstoff in einer Proteintasche kann einen genetischen Defekt in Stammzellen nicht dauerhaft reparieren.'
+        }
+      },
+      {
+        short: '2. Tumor mit p53-Punktmutation',
+        title: 'Fall 2: Solider Tumor mit „undruggable“ p53-Einzelbasenmutation',
+        desc: 'In ~40 % aller Krebserkrankungen ist der Tumorsuppressor p53 mutiert. Dem defekten p53-Protein fehlt eine hydrophobe Tasche für kleine Inhibitoren. Alle Krebszellen mit dieser Punktmutation sollen selektiv abgetötet werden.',
+        correct: 'cas12a2',
+        feedback: {
+          cas9: '❌ Weniger geeignet zur sicheren Tumor-Elimination: Einzelne DNA-Schnitte können durch fehlerhafte Reparatur überlebt werden.',
+          cas12a2: '✅ Volltreffer (Doudna-Labor & Confluence, Nature 2026)! SuCas12a2 erkennt die einzige mutierte Base auf der p53-mRNA und löst ausschließlich in den Tumorzellen den tödlichen DNA-Shredder aus.',
+          docking: '❌ Klassisches Dilemma der Wirkstoffforschung: Mutiertes p53 gilt als „undruggable“, weil keine geeignete Bindetasche für kleine Liganden existiert.'
+        }
+      },
+      {
+        short: '3. HPV+ Kopf-Hals-Karzinom (E6/E7)',
+        title: 'Fall 3: HPV-induziertes Kopf-Hals-Karzinom mit E6/E7-Onkogenen',
+        desc: 'Humane Papillomaviren haben die viralen Onkogene E6 und E7 ins Genom der Tumorzellen integriert. Gesunde menschliche Körperzellen exprimieren keinerlei E6/E7-mRNA.',
+        correct: 'cas12a2',
+        feedback: {
+          cas9: '❌ Nicht optimal: Mehrere integrierte Viruskopien im Tumorgenom erschweren das restlose Ausschalten per Einzelschnitt.',
+          cas12a2: '✅ Perfekt (Akribion Therapeutics, Nature 2026)! Mit Leit-RNAs gegen E6/E7 vernichtete GeCas12a2 präklinisch ~94 % der HPV-positiven Karzinomzellen, während gesunde Zellen mangels Virus-mRNA zu 100 % geschützt bleiben (PDB 8D49).',
+          docking: '❌ Kaum selektiv angreifbar: Die viralen Onkoproteine E6/E7 wirken über flache Protein-Protein-Grenzflächen ohne klassische Enzymtasche.'
+        }
+      },
+      {
+        short: '4. Akuter Entzündungsschmerz (COX-2)',
+        title: 'Fall 4: Akuter Entzündungsschmerz nach Zahn-OP (Enzym COX-2)',
+        desc: 'Das Enzym Cyclooxygenase-2 (COX-2) besitzt einen tiefen hydrophoben Substratkanal für Arachidonsäure. Die Prostaglandin-Synthese soll für wenige Stunden reversibel gebremst werden, ohne Zellen zu schädigen.',
+        correct: 'docking',
+        feedback: {
+          cas9: '❌ Völlig unverhältnismäßig: Für vorübergehenden Schmerz verändert man niemals dauerhaft das menschliche Genom!',
+          cas12a2: '❌ Gefährlich: Cas12a2 würde gesundes entzündetes Gewebe durch DNA-Shredding irreversibel abtöten!',
+          docking: '✅ Goldrichtig! Hier spielt das klassische Small-Molecule-Docking (z. B. Ibuprofen in der hydrophoben COX-2-Tasche nach dem Schlüssel-Schloss-Prinzip) seine volle Stärke aus.'
+        }
+      }
+    ];
+
+    function renderTrainer() {
+      const solvedCount = Object.keys(state.solvedCases).length;
+      document.getElementById('trainer-progress').textContent = `Gelöste Fälle: ${solvedCount} / 4`;
+
+      document.getElementById('trainer-tabs').innerHTML = CLINICAL_CASES.map((c, idx) => {
+        const act = idx === state.activeCaseIdx;
+        const ok = state.solvedCases[idx];
+        return `
+          <button onclick="state.activeCaseIdx=${idx};renderTrainer()" class="p-3 rounded-2xl border text-left text-xs font-bold transition ${
+            act
+              ? 'border-2 border-emerald-500 bg-emerald-50/70 dark:bg-emerald-950/30 shadow'
+              : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 hover:border-slate-400'
+          }">
+            ${ok ? '✅ ' : ''}${c.short}
+          </button>
+        `;
+      }).join('');
+
+      const cur = CLINICAL_CASES[state.activeCaseIdx];
+      const sel = state.selectedCaseOpt[state.activeCaseIdx];
+      const choices = [
+        { id: 'cas9', title: '✂️ CRISPR-Cas9 (Präzisionsschere)', sub: 'Gezielter dsDNA-Schnitt · Zelle überlebt' },
+        { id: 'cas12a2', title: '💥 CRISPR-Cas12a2 (DNA-Shredder)', sub: 'mRNA-getriggerte Kollateralspaltung · Zelltod' },
+        { id: 'docking', title: '💊 Wirkstoff-Docking (Kleines Molekül)', sub: 'Reversible Hemmung in hydrophober Proteintasche' }
+      ];
+
+      document.getElementById('trainer-card').innerHTML = `
+        <h3 class="text-sm sm:text-base font-extrabold text-slate-900 dark:text-white">${cur.title}</h3>
+        <p class="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">${cur.desc}</p>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+          ${choices.map(ch => {
+            let cls = 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-sky-400';
+            if (sel === ch.id) {
+              cls = ch.id === cur.correct
+                ? 'border-2 border-emerald-500 bg-emerald-500/15'
+                : 'border-2 border-rose-500 bg-rose-500/15';
+            }
+            return `
+              <button onclick="answerTrainer('${ch.id}')" class="p-3.5 rounded-2xl border text-left transition ${cls}">
+                <div class="text-xs sm:text-sm font-extrabold">${ch.title}</div>
+                <div class="text-[11px] text-slate-500 dark:text-slate-400 mt-1">${ch.sub}</div>
+              </button>
+            `;
+          }).join('')}
+        </div>
+        ${sel ? `
+          <div class="p-3.5 rounded-xl border text-xs sm:text-sm leading-relaxed font-medium ${
+            sel === cur.correct
+              ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-900 dark:text-emerald-200'
+              : 'border-rose-500/40 bg-rose-500/10 text-rose-900 dark:text-rose-200'
+          }">
+            ${cur.feedback[sel]}
+          </div>
+        ` : ''}
+      `;
+    }
+
+    function answerTrainer(choiceId) {
+      const idx = state.activeCaseIdx;
+      state.selectedCaseOpt[idx] = choiceId;
+      if (choiceId === CLINICAL_CASES[idx].correct) {
+        state.solvedCases[idx] = true;
+      }
+      renderTrainer();
+    }
+
+    // =========================================================================
+    // 5. MODUL 3: 3D-STRUKTUR-LABOR (3DMOL.JS · SIDE-BY-SIDE & KAMERAKOPPLUNG)
+    // =========================================================================
+    let vSingle = null;
+    let vLeft = null;
+    let vRight = null;
+    let labInitialized = false;
+    let isSyncingView = false;
+
+    const PDB_DESCRIPTIONS = {
+      '8D49': {
+        heading: 'PDB 8D49 · Inaktives SuCas12a2 (Gesunde Zelle · 3,20 Å)',
+        body: 'Binärer Cryo-EM-Komplex aus Cas12a2 (Kette A, hellgrau) und Leit-RNA (Kette B, blau). Ohne passende Ziel-mRNA verschließen die REC-Lappen das katalytische RuvC-Zentrum vollständig (Autoinhibition).'
+      },
+      '8D4B': {
+        heading: 'PDB 8D4B · RNA-aktivierter Ternärkomplex (2,92 Å)',
+        body: 'Die komplementäre Ziel-mRNA (Kette C, orange) hat an die crRNA gebunden. Die REC-Domänen sind um ~50 Å auseinandergeklappt und die Insertion-Domäne hat die RuvC-Tasche entriegelt.'
+      },
+      '8D4A': {
+        heading: 'PDB 8D4A · Aktiver DNA-Shredder-Komplex (Tumorzelle · 2,74 Å)',
+        body: 'Quaternärer Komplex mitten im Shredding: Drei gelbe Tyrosin-Klammern (Tyr465, Tyr1069, Tyr1080) knicken den eingefangenen DNA-Doppelstrang (Kette D rot, Gegenstrang E/G magenta) scharf um 90° ab und drücken ihn an die grünen Mg²⁺-Ionen im RuvC-Zentrum.'
+      },
+      '5F9R': {
+        heading: 'PDB 5F9R · Präzisionsschere SpCas9 im R-Loop (3,40 Å)',
+        body: 'Direkter Kontrast zum Shredder: SpCas9 (Kette B) bettet die Ziel-dsDNA (Ketten C/D, rot/magenta) geordnet entlang der sgRNA (Kette A, blau) ein und setzt genau einen präzisen Doppelstrangschnitt.'
+      }
+    };
+
+    const HOTSPOT_NOTES = {
+      overview: 'Gesamtarchitektur des Komplexes. Im Split-Screen kannst du bei aktivierter Kamerakopplung beide Strukturen synchron mit der Maus drehen und zoomen.',
+      ruvc: 'Katalytisches RuvC-Zentrum: Asp848, Glu1063 und Asp1213 (grüne Sticks) koordinieren zwei zweiwertige Mg²⁺-Ionen (grüne Kugeln in 8D4A), die das Phosphodiester-Rückgrat spalten.',
+      clamps: 'Aromatische Klammern: Die planaren Phenolringe von Tyr465, Tyr1069 und Tyr1080 (gelbe Sticks/Spheres) interkalieren zwischen die Nukleinbasen, erzwingen den 90°-DNA-Knick und schmelzen die Basenpaarung lokal auf.',
+      signal: 'Allosterischer Signalwandler: Die violett hervorgehobene C-terminale Insertion-Domäne (AS 938–1030, neben dem cyanfarbenen Zn²⁺-Ion) verschiebt sich nach RNA-Bindung um ~15 Å und gibt die RuvC-Spalte frei.',
+      rnaduplex: 'RNA-Sensorik: Hochspezifische Watson-Crick-Basenpaarung zwischen programmierbarer crRNA (Kette B, blau) und der auslösenden Virus- oder Tumor-mRNA (Kette C, orange) inklusive PFS-Erkennung.'
+    };
+
+    function getCanvasBg() {
+      return state.dark ? '#090d16' : '#f1f5f9';
+    }
+
+    function setupCameraCoupling() {
+      const leftEl = document.getElementById('mol-left');
+      const rightEl = document.getElementById('mol-right');
+
+      const syncFromTo = (src, dst) => {
+        if (!state.syncCameras || state.labViewMode === 'single' || !src || !dst || isSyncingView) return;
+        isSyncingView = true;
+        requestAnimationFrame(() => {
+          try {
+            const view = src.getView();
+            dst.setView(view);
+            dst.render();
+          } catch (_) {}
+          isSyncingView = false;
+        });
+      };
+
+      ['mousemove', 'wheel', 'touchmove', 'mouseup', 'touchend'].forEach(evt => {
+        leftEl.addEventListener(evt, () => syncFromTo(vLeft, vRight), { passive: true });
+        rightEl.addEventListener(evt, () => syncFromTo(vRight, vLeft), { passive: true });
+      });
+    }
+
+    function initAndRender3DLab() {
+      if (typeof $3Dmol === 'undefined') return;
+      if (!vSingle) {
+        vSingle = $3Dmol.createViewer(document.getElementById('mol-single'), { backgroundColor: getCanvasBg(), antialias: true });
+      }
+      if (!vLeft) {
+        vLeft = $3Dmol.createViewer(document.getElementById('mol-left'), { backgroundColor: getCanvasBg(), antialias: true });
+        vRight = $3Dmol.createViewer(document.getElementById('mol-right'), { backgroundColor: getCanvasBg(), antialias: true });
+        setupCameraCoupling();
+      }
+      if (!labInitialized) {
+        labInitialized = true;
+        renderActive3DScene();
+        // Hintergrund-Preload von 8D49 für sofortigen Split-Screen
+        fetchPDBCached('8D49').catch(() => {});
+      } else {
+        resizeAll3DViewers();
+      }
+    }
+
+    function resizeAll3DViewers() {
+      if (state.activeTab !== 3) return;
+      requestAnimationFrame(() => {
+        if (state.labViewMode === 'single' && vSingle) {
+          vSingle.resize();
+          vSingle.render();
+        } else {
+          if (vLeft) { vLeft.resize(); vLeft.render(); }
+          if (vRight) { vRight.resize(); vRight.render(); }
+        }
+      });
+    }
+    window.addEventListener('resize', resizeAll3DViewers);
+
+    async function fetchPDBCached(pdbId) {
+      if (pdbMemoryCache[pdbId]) {
+        updateCacheBadge();
+        return pdbMemoryCache[pdbId];
+      }
+      const resp = await fetch(`https://files.rcsb.org/download/${pdbId}.pdb`);
+      if (!resp.ok) throw new Error(`RCSB-Abruf fehlgeschlagen (${pdbId}: HTTP ${resp.status})`);
+      const txt = await resp.text();
+      pdbMemoryCache[pdbId] = txt;
+      updateCacheBadge();
+      return txt;
+    }
+
+    function updateCacheBadge() {
+      const keys = Object.keys(pdbMemoryCache);
+      const badge = document.getElementById('cache-status-badge');
+      if (badge && keys.length) {
+        badge.textContent = `Im RAM-Cache: ${keys.join(', ')}`;
+      }
+    }
+
+    /** Exakte wissenschaftliche 3Dmol.js-Darstellung mit strikter hetflag:false Trennung */
+    function buildStructureInViewer(viewer, pdbId, pdbData) {
+      viewer.spin(false);
+      viewer.clear();
+      viewer.addModel(pdbData, 'pdb');
+      viewer.setStyle({}, {});
+
+      if (pdbId === '5F9R') {
+        // SpCas9: Chain B = Protein, Chain A = sgRNA, Chain C & D = Ziel-dsDNA
+        viewer.setStyle({ chain: 'B', hetflag: false }, { cartoon: { color: '#94a3b8', thickness: 0.34 } });
+        viewer.setStyle({ chain: 'A', hetflag: false }, { cartoon: { color: '#3b82f6', thickness: 0.45 }, stick: { radius: 0.16, color: '#3b82f6' } });
+        viewer.setStyle({ chain: 'C', hetflag: false }, { cartoon: { color: '#ef4444', thickness: 0.46 }, stick: { radius: 0.18, color: '#ef4444' } });
+        viewer.setStyle({ chain: 'D', hetflag: false }, { cartoon: { color: '#d946ef', thickness: 0.46 }, stick: { radius: 0.18, color: '#d946ef' } });
+        // Aktive Zentren Cas9: RuvC (Asp10) & HNH (His840)
+        viewer.addStyle({ chain: 'B', hetflag: false, resi: [10, 840] }, { stick: { radius: 0.34, color: '#22c55e' }, sphere: { radius: 0.48, color: '#22c55e' } });
+      } else {
+        // SuCas12a2 (8D49, 8D4B, 8D4A): Chain A=Protein, B=crRNA, C=Ziel-mRNA, D=geschnittene DNA, ['E','G']=Gegenstrang
+        viewer.setStyle({ chain: 'A', hetflag: false }, { cartoon: { color: '#94a3b8', thickness: 0.35 } });
+        viewer.setStyle({ chain: 'B', hetflag: false }, { cartoon: { color: '#3b82f6', thickness: 0.45 }, stick: { radius: 0.17, color: '#3b82f6' } });
+        viewer.setStyle({ chain: 'C', hetflag: false }, { cartoon: { color: '#f97316', thickness: 0.46 }, stick: { radius: 0.18, color: '#f97316' } });
+        viewer.setStyle({ chain: 'D', hetflag: false }, { cartoon: { color: '#ef4444', thickness: 0.48 }, stick: { radius: 0.2, color: '#ef4444' } });
+        viewer.setStyle({ chain: ['E', 'G'], hetflag: false }, { cartoon: { color: '#d946ef', thickness: 0.48 }, stick: { radius: 0.2, color: '#d946ef' } });
+
+        // Katalytische RuvC-Triade (grüne Sticks) & Aromatische Tyrosin-Klammern (gelbe Sticks/Spheres)
+        viewer.addStyle({ chain: 'A', hetflag: false, resi: [848, 1063, 1213] }, { stick: { radius: 0.34, color: '#22c55e' } });
+        viewer.addStyle({ chain: 'A', hetflag: false, resi: [465, 1069, 1080] }, { stick: { radius: 0.36, color: '#eab308' }, sphere: { radius: 0.42, color: '#eab308' } });
+
+        // Zweiwertige Metallionen separat (ohne hetflag:false!)
+        viewer.setStyle({ resn: 'MG' }, { sphere: { radius: 1.4, color: '#22c55e' } });
+        viewer.setStyle({ resn: 'ZN' }, { sphere: { radius: 1.2, color: '#06b6d4' } });
+      }
+
+      applyHotspotAndLabels(viewer, pdbId, false);
+
+      if (state.surfaceOn) {
+        const protChain = pdbId === '5F9R' ? 'B' : 'A';
+        viewer.addSurface($3Dmol.SurfaceType.VDW, { opacity: 0.46, color: '#94a3b8' }, { chain: protChain, hetflag: false });
+      }
+
+      viewer.setClickable({}, true, (atom) => {
+        if (!atom) return;
+        document.getElementById('atom-inspector-text').textContent =
+          `${pdbId} · ${atom.resn} ${atom.resi} (Kette ${atom.chain} · Atom ${atom.atom})`;
+      });
+
+      if (state.spinOn) viewer.spin('y', 0.35);
+      viewer.render();
+    }
+
+    function applyHotspotAndLabels(viewer, pdbId, animate = true) {
+      if (!viewer) return;
+      viewer.removeAllLabels();
+      const dur = animate ? 600 : 0;
+      const hs = state.hotspot;
+
+      // Signalwandler-Domäne bei Bedarf violett einfärben, sonst Basis-Stil halten
+      if (pdbId !== '5F9R') {
+        viewer.setStyle({ chain: 'A', hetflag: false }, { cartoon: { color: '#94a3b8', thickness: 0.35 } });
+        if (hs === 'signal') {
+          viewer.setStyle({ chain: 'A', hetflag: false, resi: SIGNAL_DOMAIN_RESI }, { cartoon: { color: '#a855f7', thickness: 0.5 } });
+        }
+        viewer.addStyle({ chain: 'A', hetflag: false, resi: [848, 1063, 1213] }, { stick: { radius: 0.34, color: '#22c55e' } });
+        viewer.addStyle({ chain: 'A', hetflag: false, resi: [465, 1069, 1080] }, { stick: { radius: 0.36, color: '#eab308' }, sphere: { radius: 0.42, color: '#eab308' } });
+      }
+
+      if (hs === 'overview') {
+        if (state.labelsOn) {
+          if (pdbId === '5F9R') {
+            viewer.addLabel('SpCas9 · Präzisions-R-Loop', { backgroundColor: '#1e3a8a', fontColor: '#fff', fontSize: 11 }, { chain: 'A', hetflag: false, resi: 20 });
+          } else {
+            viewer.addLabel('crRNA (Kette B)', { backgroundColor: '#1d4ed8', fontColor: '#fff', fontSize: 11 }, { chain: 'B', hetflag: false, resi: 12 });
+            if (pdbId !== '8D49') viewer.addLabel('Ziel-mRNA (Kette C)', { backgroundColor: '#c2410c', fontColor: '#fff', fontSize: 11 }, { chain: 'C', hetflag: false, resi: 12 });
+            if (pdbId === '8D4A') viewer.addLabel('90°-geknickte dsDNA', { backgroundColor: '#991b1b', fontColor: '#fff', fontSize: 11 }, { chain: 'D', hetflag: false, resi: 6 });
+          }
+        }
+        viewer.zoomTo({}, dur);
+      } else if (hs === 'ruvc') {
+        if (pdbId === '5F9R') {
+          if (state.labelsOn) {
+            viewer.addLabel('RuvC (Pos. 10)', { backgroundColor: '#065f46', fontColor: '#fff', fontSize: 11 }, { chain: 'B', hetflag: false, resi: 10, atom: 'CA' });
+            viewer.addLabel('HNH (Pos. 840)', { backgroundColor: '#065f46', fontColor: '#fff', fontSize: 11 }, { chain: 'B', hetflag: false, resi: 840, atom: 'CA' });
+          }
+          viewer.zoomTo({ chain: 'B', hetflag: false, resi: [10, 840] }, dur);
+        } else {
+          const ruvcSel = { chain: 'A', hetflag: false, resi: [848, 1063, 1213] };
+          if (state.labelsOn) {
+            viewer.addLabel('Asp848', { backgroundColor: '#065f46', fontColor: '#ecfdf5', fontSize: 11 }, { chain: 'A', hetflag: false, resi: 848, atom: 'CA' });
+            viewer.addLabel('Glu1063', { backgroundColor: '#065f46', fontColor: '#ecfdf5', fontSize: 11 }, { chain: 'A', hetflag: false, resi: 1063, atom: 'CA' });
+            viewer.addLabel('Asp1213', { backgroundColor: '#065f46', fontColor: '#ecfdf5', fontSize: 11 }, { chain: 'A', hetflag: false, resi: 1213, atom: 'CA' });
+            if (pdbId === '8D4A') viewer.addLabel('2× Mg²⁺', { backgroundColor: '#14532d', fontColor: '#bbf7d0', fontSize: 11 }, { resn: 'MG' });
+          }
+          viewer.zoomTo(pdbId === '8D4A' ? { or: [ruvcSel, { resn: 'MG' }] } : ruvcSel, dur);
+        }
+      } else if (hs === 'clamps') {
+        if (pdbId === '5F9R') {
+          if (state.labelsOn) viewer.addLabel('Cas9: Geordneter R-Loop ohne Tyrosin-Knick', { backgroundColor: '#1e3a8a', fontColor: '#fff', fontSize: 11 }, { chain: 'C', hetflag: false, resi: 15 });
+          viewer.zoomTo({ chain: ['C', 'D'], hetflag: false }, dur);
+        } else {
+          const clampSel = { chain: 'A', hetflag: false, resi: [465, 1069, 1080] };
+          if (state.labelsOn) {
+            viewer.addLabel('Tyr465', { backgroundColor: '#713f12', fontColor: '#fef08a', fontSize: 11 }, { chain: 'A', hetflag: false, resi: 465, atom: 'CA' });
+            viewer.addLabel('Tyr1069 (π-Keil)', { backgroundColor: '#713f12', fontColor: '#fef08a', fontSize: 11 }, { chain: 'A', hetflag: false, resi: 1069, atom: 'CA' });
+            viewer.addLabel('Tyr1080 (π-Keil)', { backgroundColor: '#713f12', fontColor: '#fef08a', fontSize: 11 }, { chain: 'A', hetflag: false, resi: 1080, atom: 'CA' });
+          }
+          viewer.zoomTo(pdbId === '8D4A' ? { or: [clampSel, { chain: ['D', 'E', 'G'], hetflag: false }] } : clampSel, dur);
+        }
+      } else if (hs === 'signal') {
+        if (pdbId === '5F9R') {
+          if (state.labelsOn) viewer.addLabel('Cas9 besitzt keine Cas12a2-Insertion-Domäne', { backgroundColor: '#581c87', fontColor: '#fff', fontSize: 11 }, { chain: 'B', hetflag: false, resi: 840, atom: 'CA' });
+          viewer.zoomTo({}, dur);
+        } else {
+          const sigSel = { chain: 'A', hetflag: false, resi: SIGNAL_DOMAIN_RESI };
+          if (state.labelsOn) {
+            viewer.addLabel('Signalwandler (AS 938–1030)', { backgroundColor: '#581c87', fontColor: '#f3e8ff', fontSize: 11 }, { chain: 'A', hetflag: false, resi: 980, atom: 'CA' });
+            viewer.addLabel('Zn²⁺-Finger', { backgroundColor: '#155e75', fontColor: '#cffafe', fontSize: 11 }, { resn: 'ZN' });
+          }
+          viewer.zoomTo({ or: [sigSel, { resn: 'ZN' }] }, dur);
+        }
+      } else if (hs === 'rnaduplex') {
+        if (pdbId === '5F9R') {
+          if (state.labelsOn) viewer.addLabel('sgRNA : DNA-Zielstrang', { backgroundColor: '#1d4ed8', fontColor: '#fff', fontSize: 11 }, { chain: 'A', hetflag: false, resi: 15 });
+          viewer.zoomTo({ chain: ['A', 'C'], hetflag: false }, dur);
+        } else {
+          if (state.labelsOn) {
+            viewer.addLabel('crRNA (Kette B)', { backgroundColor: '#1d4ed8', fontColor: '#fff', fontSize: 11 }, { chain: 'B', hetflag: false, resi: 15 });
+            if (pdbId !== '8D49') viewer.addLabel('Ziel-mRNA + PFS (Kette C)', { backgroundColor: '#c2410c', fontColor: '#fff', fontSize: 11 }, { chain: 'C', hetflag: false, resi: 18 });
+          }
+          viewer.zoomTo({ chain: pdbId === '8D49' ? ['B'] : ['B', 'C'], hetflag: false }, dur);
+        }
+      }
+      viewer.render();
+    }
+
+    async function renderActive3DScene() {
+      update3DControlStates();
+      const overlay = document.getElementById('lab-loading-overlay');
+      const retry = document.getElementById('lab-retry-btn');
+      const spinner = document.getElementById('lab-spinner');
+      retry.classList.add('hidden');
+      spinner.classList.remove('hidden');
+
+      try {
+        if (state.labViewMode === 'single') {
+          const id = state.singlePDB;
+          if (!pdbMemoryCache[id]) {
+            document.getElementById('lab-loading-title').textContent = `Lade Struktur ${id}.pdb von RCSB…`;
+            overlay.classList.remove('hidden');
+          }
+          const txt = await fetchPDBCached(id);
+          overlay.classList.add('hidden');
+          requestAnimationFrame(() => {
+            vSingle.resize();
+            buildStructureInViewer(vSingle, id, txt);
+          });
+        } else {
+          const leftId = state.labViewMode === 'split_states' ? '8D49' : '5F9R';
+          const rightId = '8D4A';
+
+          document.getElementById('overlay-tag-left').textContent = leftId === '8D49'
+            ? 'Gesunde Zelle: Inaktives SuCas12a2 (PDB 8D49)'
+            : 'Präzisionsschere SpCas9 (PDB 5F9R)';
+          document.getElementById('overlay-tag-right').textContent = state.labViewMode === 'split_states'
+            ? 'Tumorzelle: Aktiver DNA-Shredder (PDB 8D4A)'
+            : 'DNA-Shredder SuCas12a2 (PDB 8D4A)';
+
+          if (!pdbMemoryCache[leftId] || !pdbMemoryCache[rightId]) {
+            document.getElementById('lab-loading-title').textContent = `Lade Side-by-Side-Vergleich (${leftId} & ${rightId})…`;
+            overlay.classList.remove('hidden');
+          }
+          const [txtL, txtR] = await Promise.all([fetchPDBCached(leftId), fetchPDBCached(rightId)]);
+          overlay.classList.add('hidden');
+          requestAnimationFrame(() => {
+            vLeft.resize();
+            vRight.resize();
+            buildStructureInViewer(vLeft, leftId, txtL);
+            buildStructureInViewer(vRight, rightId, txtR);
+          });
+        }
+      } catch (err) {
+        spinner.classList.add('hidden');
+        document.getElementById('lab-loading-title').textContent = 'Verbindung zu RCSB PDB fehlgeschlagen';
+        document.getElementById('lab-loading-sub').textContent = err.message;
+        retry.classList.remove('hidden');
+        overlay.classList.remove('hidden');
+      }
+    }
+
+    function update3DControlStates() {
+      const isSingle = state.labViewMode === 'single';
+      document.getElementById('stage-single-wrap').classList.toggle('hidden', !isSingle);
+      document.getElementById('stage-split-wrap').classList.toggle('hidden', isSingle);
+      document.getElementById('single-pdb-pills').classList.toggle('hidden', !isSingle);
+      document.getElementById('split-mode-banner').classList.toggle('hidden', isSingle);
+
+      const modeMap = {
+        single: 'mode-btn-single',
+        split_states: 'mode-btn-states',
+        split_duel: 'mode-btn-duel'
+      };
+      Object.entries(modeMap).forEach(([key, btnId]) => {
+        document.getElementById(btnId).className = state.labViewMode === key
+          ? 'px-3.5 py-2 rounded-xl text-xs font-extrabold border-2 border-sky-500 bg-sky-600 text-white shadow transition'
+          : 'px-3.5 py-2 rounded-xl text-xs font-semibold border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 hover:border-sky-400 transition';
+      });
+
+      document.querySelectorAll('.pdb-pill').forEach(b => {
+        const act = b.getAttribute('data-pdb') === state.singlePDB;
+        b.className = act
+          ? 'pdb-pill px-3 py-1.5 rounded-xl text-xs font-extrabold border-2 border-sky-500 bg-sky-600 text-white shadow transition'
+          : 'pdb-pill px-3 py-1.5 rounded-xl text-xs font-semibold border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:border-sky-400 transition';
+      });
+
+      document.querySelectorAll('.hs-pill').forEach(b => {
+        const act = b.getAttribute('data-hs') === state.hotspot;
+        b.className = act
+          ? 'hs-pill text-left p-2.5 rounded-2xl border-2 border-amber-500 bg-amber-50/80 dark:bg-amber-950/30 text-xs shadow transition'
+          : 'hs-pill text-left p-2.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 hover:border-slate-400 text-xs transition';
+      });
+
+      const refKey = isSingle ? state.singlePDB : (state.labViewMode === 'split_states' ? '8D4A' : '5F9R');
+      const d = PDB_DESCRIPTIONS[refKey];
+      document.getElementById('lab-science-card').innerHTML = `
+        <div class="font-extrabold text-slate-900 dark:text-white text-sm">
+          ${isSingle ? d.heading : (state.labViewMode === 'split_states' ? 'Side-by-Side: Gesunde Zelle (8D49) vs. Tumorzelle (8D4A)' : 'Side-by-Side: Präzisionsschere Cas9 (5F9R) vs. Shredder Cas12a2 (8D4A)')}
+        </div>
+        <p class="text-slate-700 dark:text-slate-300 leading-relaxed text-xs">${d.body}</p>
+        <div class="pt-2.5 border-t border-sky-200 dark:border-slate-800 text-xs text-slate-900 dark:text-amber-200 leading-relaxed">
+          <strong>Aktiver Hotspot:</strong> ${HOTSPOT_NOTES[state.hotspot]}
+        </div>
+      `;
+    }
+
+    function setLabViewMode(mode) {
+      state.labViewMode = mode;
+      renderActive3DScene();
+    }
+    function selectSinglePDB(pdbId) {
+      state.singlePDB = pdbId;
+      state.labViewMode = 'single';
+      renderActive3DScene();
+    }
+    function selectHotspot(hs) {
+      state.hotspot = hs;
+      update3DControlStates();
+      if (state.labViewMode === 'single' && vSingle) {
+        applyHotspotAndLabels(vSingle, state.singlePDB, true);
+      } else {
+        const leftId = state.labViewMode === 'split_states' ? '8D49' : '5F9R';
+        if (vLeft) applyHotspotAndLabels(vLeft, leftId, true);
+        if (vRight) applyHotspotAndLabels(vRight, '8D4A', true);
+      }
+    }
+    function toggleVDWSurface() {
+      state.surfaceOn = !state.surfaceOn;
+      document.getElementById('btn-toggle-surf').textContent = state.surfaceOn ? '🫧 Proteinoberfläche: Ein' : '🫧 Proteinoberfläche: Aus';
+      renderActive3DScene();
+    }
+    function toggleCameraSync() {
+      state.syncCameras = !state.syncCameras;
+      const btn = document.getElementById('btn-toggle-sync');
+      btn.textContent = state.syncCameras ? '🔗 Kameras koppeln: Ein' : '🔗 Kameras koppeln: Aus';
+      btn.className = state.syncCameras
+        ? 'px-3 py-1.5 rounded-xl text-xs font-bold border border-sky-500/50 bg-sky-500/15 text-sky-800 dark:text-sky-300 transition'
+        : 'px-3 py-1.5 rounded-xl text-xs font-bold border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 transition';
+    }
+    function toggleSpin() {
+      state.spinOn = !state.spinOn;
+      document.getElementById('btn-toggle-spin').textContent = state.spinOn ? '🔄 Rotation: Ein' : '🔄 Rotation: Aus';
+      [vSingle, vLeft, vRight].forEach(v => {
+        if (v) state.spinOn ? v.spin('y', 0.35) : v.spin(false);
+      });
+    }
+    function toggle3DLabels() {
+      state.labelsOn = !state.labelsOn;
+      const btn = document.getElementById('btn-toggle-labels');
+      btn.textContent = state.labelsOn ? '🏷️ 3D-Beschriftungen: Ein' : '🏷️ 3D-Beschriftungen: Aus';
+      selectHotspot(state.hotspot);
+    }
+
+    function jumpToLabSingle(pdbId, hs = 'overview') {
+      state.labViewMode = 'single';
+      state.singlePDB = pdbId;
+      state.hotspot = hs;
+      switchMainTab(3);
+      renderActive3DScene();
+    }
+    function jumpToSplitDuel() {
+      state.labViewMode = 'split_duel';
+      state.hotspot = 'overview';
+      switchMainTab(3);
+      renderActive3DScene();
+    }
+
+    // =========================================================================
+    // 6. MODUL 4A: ONKOLOGIE- & LNP-DELIVERY-SIMULATOR (2026)
+    // =========================================================================
+    function setOncoScenario(scen) {
+      state.oncoScenario = scen;
+      ['hpv', 'p53', 'chemo'].forEach(k => {
+        const b = document.getElementById(`onco-btn-${k}`);
+        b.className = k === scen
+          ? 'text-left p-3.5 rounded-2xl border-2 border-rose-500 bg-rose-50/70 dark:bg-rose-950/30 text-xs shadow transition'
+          : 'text-left p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 hover:border-slate-400 text-xs transition';
+      });
+      renderOncoSimulator();
+    }
+
+    function togglePFS() {
+      state.pfsPresent = !state.pfsPresent;
+      const b = document.getElementById('btn-pfs-toggle');
+      b.textContent = state.pfsPresent ? 'PFS vorhanden: JA ✓' : 'PFS fehlt: NEIN ✗';
+      b.className = state.pfsPresent
+        ? 'px-3.5 py-2 rounded-xl text-xs font-extrabold bg-emerald-600 text-white shadow shrink-0 transition'
+        : 'px-3.5 py-2 rounded-xl text-xs font-extrabold bg-rose-600 text-white shadow shrink-0 transition';
+      renderOncoSimulator();
+    }
+
+    function toggleLNPType() {
+      state.lnpTargeted = !state.lnpTargeted;
+      const b = document.getElementById('btn-lnp-toggle');
+      b.textContent = state.lnpTargeted ? 'Ziel-Ligand-LNP (Forschung)' : 'Standard-LNP (Leber-Falle)';
+      b.className = state.lnpTargeted
+        ? 'px-3.5 py-2 rounded-xl text-xs font-extrabold bg-sky-600 text-white shadow shrink-0 transition'
+        : 'px-3.5 py-2 rounded-xl text-xs font-extrabold bg-amber-600 text-white shadow shrink-0 transition';
+      renderOncoSimulator();
+    }
+
+    function renderOncoSimulator() {
+      const sc = state.oncoScenario;
+      const hasPFS = state.pfsPresent;
+      const targeted = state.lnpTargeted;
+
+      let healthyCard = '';
+      let tumorCard = '';
+      let seqBanner = '';
+
+      if (sc === 'chemo') {
+        seqBanner = `<span class="text-amber-300 font-bold">Klassisches Zytostatikum:</span> Keine mRNA-Erkennung – unselektive DNA-Alkylierung/Strangbrüche in allen teilungsaktiven Zellen.`;
+        healthyCard = `
+          <div class="p-4 rounded-2xl border-2 border-rose-500/50 bg-rose-50/40 dark:bg-rose-950/20 space-y-2">
+            <div class="flex justify-between items-center"><span class="font-extrabold text-sm">🧑 Gesunde Schleimhaut-/Knochenmarkzelle</span><span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-700 dark:text-rose-300">Kollateralschaden!</span></div>
+            <p class="text-xs text-slate-700 dark:text-slate-300">Zytostatikum schädigt unselektiv auch gesunde DNA → Haarausfall, Mukositis, Immunsuppression.</p>
+          </div>`;
+        tumorCard = `
+          <div class="p-4 rounded-2xl border-2 border-rose-500/60 bg-rose-50/40 dark:bg-rose-950/20 space-y-2">
+            <div class="flex justify-between items-center"><span class="font-extrabold text-sm">🦠 Tumorzelle</span><span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-700 dark:text-rose-300">Dosislimitierter Zelltod</span></div>
+            <p class="text-xs text-slate-700 dark:text-slate-300">DNA-Schädigung bremst den Tumor, aber die Dosis wird durch die Toxizität an gesunden Organen begrenzt.</p>
+          </div>`;
+      } else {
+        const isHPV = sc === 'hpv';
+        seqBanner = isHPV
+          ? `Gesunde Zelle: <span class="text-slate-400">[0 % virale HPV-E6/E7-mRNA]</span> &nbsp;|&nbsp; HPV-Tumorzelle: ${hasPFS ? '<span class="text-amber-300 font-bold">5\'-GAAAG</span>' : '<span class="line-through text-rose-400">[kein PFS]</span>'}-<span class="text-orange-400 font-bold">AUGCACCAAAAGAGAAC…</span> (E6/E7-Transkript)`
+          : `Gesunde Zelle (WT-p53): 5'-<span class="text-amber-300">GAAAG</span>-UGUGUU<span class="px-1 rounded bg-emerald-600 text-white font-bold">C</span>CUG-3' (Mismatch ✕) &nbsp;|&nbsp; Tumor (Mut-p53): 5'-${hasPFS ? '<span class="text-amber-300 font-bold">GAAAG</span>' : '<span class="line-through text-rose-400">UCCCU</span>'}-UGUGUU<span class="px-1 rounded bg-rose-600 text-white font-bold">A</span>CUG-3'`;
+
+        healthyCard = `
+          <div class="p-4 rounded-2xl border-2 border-emerald-500/50 bg-emerald-50/40 dark:bg-emerald-950/20 space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="font-extrabold text-sm">🟢 Gesunde Körperzelle (inkl. Hepatozyt)</span>
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-800 dark:text-emerald-300">🔒 Autoinhibiert (PDB 8D49)</span>
+            </div>
+            <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+              ${isHPV
+                ? 'Selbst wenn LNPs in gesunde Zellen gelangen: Menschliche Zellen besitzen keine virale HPV-E6/E7-mRNA. GeCas12a2 bleibt zu 100 % geschlossen!'
+                : 'Wildtyp-p53-mRNA unterscheidet sich in genau 1 Base von der Leit-RNA. Dieser Einzelbasen-Mismatch verhindert das 50-Å-Aufklappen – die Zelle überlebt unversehrt!'}
+            </p>
+          </div>`;
+
+        tumorCard = hasPFS ? `
+          <div class="p-4 rounded-2xl border-2 border-rose-500/60 bg-rose-50/40 dark:bg-rose-950/25 space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="font-extrabold text-sm">🔴 ${isHPV ? 'HPV+ Karzinomzelle (E6/E7)' : 'Krebszelle mit p53-Punktmutation'}</span>
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-800 dark:text-rose-300">💥 DNA-Shredder aktiv (PDB 8D4A)</span>
+            </div>
+            <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+              ${isHPV
+                ? '<strong>Nature 2026 (Akribion):</strong> E6/E7-mRNA + PFS entsichern GeCas12a2 → <strong>~94 %</strong> der HPV-positiven Zervixkarzinomzellen abgetötet &amp; signifikante Tumorreduktion im Kopf-Hals-Mausmodell (Klinikstart ca. 2030).'
+                : '<strong>Nature 2026 (Confluence &amp; Doudna-Lab):</strong> Perfekter Treffer an der mutierten Base + PFS schaltet SuCas12a2 frei → selektiver Tod des „undruggable“ p53-Tumors!'}
+            </p>
+          </div>` : `
+          <div class="p-4 rounded-2xl border-2 border-amber-500/60 bg-amber-50/40 dark:bg-amber-950/25 space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="font-extrabold text-sm">🟠 Tumorzelle OHNE passende PFS</span>
+              <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-800 dark:text-amber-300">⚠️ Kein Erstkontakt möglich</span>
+            </div>
+            <p class="text-xs text-slate-700 dark:text-slate-300 leading-relaxed">
+              Obwohl die Krebsmutation vorliegt, fehlt daneben die passende PFS-Flankierungssequenz! Genau deshalb erforscht Confluence <strong>9 weitere Cas12a2-Nukleasen</strong> aus Termitendärmen, Schweinedärmen und arktischem Permafrost mit anderen PFS-Ansprüchen.
+            </p>
+          </div>`;
+      }
+
+      const lnpSvg = !targeted ? `
+        <div class="p-4 rounded-2xl bg-slate-900 text-slate-100 border border-slate-800 grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+          <div class="lg:col-span-7">
+            <svg viewBox="0 0 560 150" class="w-full h-auto">
+              <circle cx="68" cy="75" r="32" fill="#1e293b" stroke="#facc15" stroke-width="2.5" stroke-dasharray="5 3"/>
+              <text x="68" y="72" text-anchor="middle" fill="#fde047" font-size="9.5" font-weight="800">LNP</text>
+              <text x="68" y="85" text-anchor="middle" fill="#93c5fd" font-size="8.5">mRNA+gRNA</text>
+              <circle cx="96" cy="52" r="9" fill="#a855f7"/><text x="96" y="55" text-anchor="middle" fill="#fff" font-size="7" font-weight="700">ApoE</text>
+              <path d="M 112 68 Q 225 34, 345 40" fill="none" stroke="#f59e0b" stroke-width="7.5" stroke-linecap="round"/>
+              <text x="230" y="30" text-anchor="middle" fill="#fbbf24" font-size="10.5" font-weight="800">~80–90 % „Leber-Falle“ (Fetttröpfchen-Erkennung)</text>
+              <rect x="355" y="14" width="190" height="54" rx="12" fill="#451a03" stroke="#f59e0b" stroke-width="1.8"/>
+              <text x="450" y="37" text-anchor="middle" fill="#fde68a" font-size="11" font-weight="800">Leber (Hepatozyten)</text>
+              <text x="450" y="53" text-anchor="middle" fill="#fcd34d" font-size="9.5">Chance: Cas-Clear gegen Leberkrebs!</text>
+              <path d="M 112 84 Q 225 118, 345 118" fill="none" stroke="#64748b" stroke-width="2.5" stroke-dasharray="5 4"/>
+              <rect x="355" y="90" width="190" height="48" rx="12" fill="#1e293b" stroke="#64748b"/>
+              <text x="450" y="112" text-anchor="middle" fill="#cbd5e1" font-size="10.5" font-weight="700">Solide Tumoren (z. B. Kopf-Hals)</text>
+              <text x="450" y="127" text-anchor="middle" fill="#94a3b8" font-size="9">Aktuelle Delivery-Hürde</text>
+            </svg>
+          </div>
+          <div class="lg:col-span-5 text-xs text-slate-300 leading-relaxed space-y-1.5">
+            <div class="font-extrabold text-amber-400">Warum Standard-LNPs in der Leber landen:</div>
+            <p>Unpolare Lipid-Nanopartikel binden im Blut Apolipoprotein E (ApoE) und werden von Leberzellen wie natürliche Lipoproteine abgefangen. Confluence nutzt dies gezielt für <strong>Leberkrebs (Cas-Clear-Plattform)</strong>, während für andere Organe neue LNP-Hüllen entwickelt werden.</p>
+          </div>
+        </div>
+      ` : `
+        <div class="p-4 rounded-2xl bg-slate-900 text-slate-100 border border-slate-800 grid grid-cols-1 lg:grid-cols-12 gap-4 items-center">
+          <div class="lg:col-span-7">
+            <svg viewBox="0 0 560 150" class="w-full h-auto">
+              <circle cx="68" cy="75" r="32" fill="#064e3b" stroke="#34d399" stroke-width="2.5"/>
+              <text x="68" y="75" text-anchor="middle" fill="#ecfdf5" font-size="9" font-weight="800">Ziel-LNP</text>
+              <text x="104" y="56" fill="#34d399" font-size="13" font-weight="800">Y</text>
+              <text x="106" y="94" fill="#34d399" font-size="13" font-weight="800">Y</text>
+              <path d="M 115 68 Q 225 40, 345 40" fill="none" stroke="#64748b" stroke-width="2.2" stroke-dasharray="4 4"/>
+              <rect x="355" y="16" width="190" height="48" rx="12" fill="#1e293b" stroke="#64748b"/>
+              <text x="450" y="44" text-anchor="middle" fill="#94a3b8" font-size="10.5">Reduzierte Leber-Aufnahme</text>
+              <path d="M 115 84 Q 225 118, 345 118" fill="none" stroke="#10b981" stroke-width="7.5" stroke-linecap="round"/>
+              <text x="230" y="136" text-anchor="middle" fill="#34d399" font-size="10.5" font-weight="800">Rezeptor-gesteuertes Tumor-Targeting</text>
+              <rect x="355" y="88" width="190" height="52" rx="12" fill="#064e3b" stroke="#10b981" stroke-width="2"/>
+              <text x="450" y="112" text-anchor="middle" fill="#ecfdf5" font-size="11" font-weight="800">Extrahepatischer Ziel-Tumor</text>
+              <text x="450" y="128" text-anchor="middle" fill="#a7f3d0" font-size="9.5">Forschungsfokus Doudna-Lab &amp; Akribion</text>
+            </svg>
+          </div>
+          <div class="lg:col-span-5 text-xs text-slate-300 leading-relaxed space-y-1.5">
+            <div class="font-extrabold text-emerald-400">Nächste Generation veränderter LNP-Oberflächen:</div>
+            <p>Durch geänderte Lipid-Zusammensetzung und Oberflächen-Liganden wird die ApoE-Bindung unterdrückt, damit Cas12a2-mRNA und Leit-RNA gezielt solide Tumoren außerhalb der Leber erreichen.</p>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('onco-sim-stage').innerHTML = `
+        <div class="p-3 rounded-xl bg-slate-900 text-slate-100 font-mono text-xs overflow-x-auto border border-slate-700">${seqBanner}</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">${healthyCard}${tumorCard}</div>
+        ${lnpSvg}
+      `;
+    }
+
+    // =========================================================================
+    // 7. MODUL 4B: 40 % DNA VS. 88 % PROTEIN & LIVE-CODON-EDITOR POS. 1069
+    // =========================================================================
+    const CLAMP_REGION_1066_1072 = [
+      { pos: 1066, suDNA: 'ATC', geDNA: 'ATT', suAA: 'Ile', geAA: 'Ile' },
+      { pos: 1067, suDNA: 'TTA', geDNA: 'CTG', suAA: 'Leu', geAA: 'Leu' },
+      { pos: 1068, suDNA: 'AAC', geDNA: 'AAT', suAA: 'Asn', geAA: 'Asn' },
+      { pos: 1069, suDNA: 'TAT', geDNA: 'TAC', suAA: 'Tyr', geAA: 'Tyr', highlight: true },
+      { pos: 1070, suDNA: 'GGT', geDNA: 'GGC', suAA: 'Gly', geAA: 'Gly' },
+      { pos: 1071, suDNA: 'CGT', geDNA: 'AGA', suAA: 'Arg', geAA: 'Arg' },
+      { pos: 1072, suDNA: 'GTG', geDNA: 'ATC', suAA: 'Val', geAA: 'Ile' }
+    ];
+
+    const GENETIC_CODE = {
+      TTT:'Phe',TTC:'Phe',TTA:'Leu',TTG:'Leu',CTT:'Leu',CTC:'Leu',CTA:'Leu',CTG:'Leu',
+      ATT:'Ile',ATC:'Ile',ATA:'Ile',ATG:'Met',GTT:'Val',GTC:'Val',GTA:'Val',GTG:'Val',
+      TCT:'Ser',TCC:'Ser',TCA:'Ser',TCG:'Ser',CCT:'Pro',CCC:'Pro',CCA:'Pro',CCG:'Pro',
+      ACT:'Thr',ACC:'Thr',ACA:'Thr',ACG:'Thr',GCT:'Ala',GCC:'Ala',GCA:'Ala',GCG:'Ala',
+      TAT:'Tyr',TAC:'Tyr',TAA:'STOP',TAG:'STOP',CAT:'His',CAC:'His',CAA:'Gln',CAG:'Gln',
+      AAT:'Asn',AAC:'Asn',AAA:'Lys',AAG:'Lys',GAT:'Asp',GAC:'Asp',GAA:'Glu',GAG:'Glu',
+      TGT:'Cys',TGC:'Cys',TGA:'STOP',TGG:'Trp',CGT:'Arg',CGC:'Arg',CGA:'Arg',CGG:'Arg',
+      AGT:'Ser',AGC:'Ser',AGA:'Arg',AGG:'Arg',GGT:'Gly',GGC:'Gly',GGA:'Gly',GGG:'Gly'
+    };
+
+    function setPos1069Codon(newCodon) {
+      state.codon1069 = newCodon;
+      renderCodeExplorer();
+    }
+
+    function setPos1069SingleBase(baseIdx, letter) {
+      const chars = state.codon1069.split('');
+      chars[baseIdx] = letter;
+      state.codon1069 = chars.join('');
+      renderCodeExplorer();
+    }
+
+    function renderCodeExplorer() {
+      const curCodon = state.codon1069;
+      const curAA = GENETIC_CODE[curCodon];
+
+      // 1. Alignment-Streifen Pos. 1066–1072
+      document.getElementById('clamp-alignment-grid').innerHTML = `
+        <div class="grid grid-cols-7 gap-2 min-w-[640px] font-mono text-xs">
+          ${CLAMP_REGION_1066_1072.map(item => {
+            const suCod = item.pos === 1069 ? curCodon : item.suDNA;
+            const suAmino = item.pos === 1069 ? curAA : item.suAA;
+            const is1069 = item.pos === 1069;
+            return `
+              <div class="p-3 rounded-2xl border text-center space-y-1 ${
+                is1069
+                  ? 'border-2 border-amber-500 bg-amber-50/70 dark:bg-amber-950/30 shadow'
+                  : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950'
+              }">
+                <div class="font-sans text-[11px] font-extrabold ${is1069 ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}">
+                  Pos. ${item.pos}${is1069 ? ' ★' : ''}
+                </div>
+                <div class="font-bold text-sky-700 dark:text-sky-300" title="SuCas12a2 (USA)">Su: ${suCod}</div>
+                <div class="text-slate-500 dark:text-slate-400" title="GeCas12a2 (DE)">Ge: ${item.geDNA}</div>
+                <div class="pt-1">
+                  <span class="px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                    suAmino === item.geAA
+                      ? 'bg-emerald-500/20 text-emerald-800 dark:text-emerald-300'
+                      : 'bg-rose-500/20 text-rose-800 dark:text-rose-300'
+                  }">${suAmino === item.geAA ? suAmino : `${suAmino} ≠ ${item.geAA}`}</span>
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      `;
+
+      // 2. Bewertung der Mutation an Position 1069
+      const isAromatic = (curAA === 'Tyr' || curAA === 'Phe' || curAA === 'Trp');
+      let statusBadge = '';
+      let explanation = '';
+
+      if (curCodon === 'TAT') {
+        statusBadge = '<span class="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500/20 text-emerald-800 dark:text-emerald-300">Wildtyp SuCas12a2 (TAT = Tyrosin)</span>';
+        explanation = 'Der aromatische Phenolring von <strong>Tyrosin-1069</strong> schiebt sich per π-Stacking zwischen die DNA-Basen, erzwingt den <strong>90°-Knick</strong> und schmilzt die Doppelhelix auf → voller dsDNA-Shredder!';
+      } else if (curCodon === 'TAC') {
+        statusBadge = '<span class="px-3 py-1 rounded-full text-xs font-extrabold bg-teal-500/20 text-teal-800 dark:text-teal-300">Stille Wobble-Mutation (TAC = Tyrosin, wie in GeCas12a2!)</span>';
+        explanation = 'Obwohl sich die 3. Codon-Base geändert hat (<span class="font-mono">TAT → TAC</span>), codiert das Triplett weiterhin für <strong>Tyrosin</strong>! Genau dieser degenerierte Code erklärt, warum SuCas12a2 und GeCas12a2 trotz nur 40 % DNA-Ähnlichkeit dieselbe 3D-Klammer bilden.';
+      } else if (curAA === 'Ala') {
+        statusBadge = '<span class="px-3 py-1 rounded-full text-xs font-extrabold bg-rose-500/20 text-rose-800 dark:text-rose-300">Berühmte Labor-Mutante Y1069A (Alanin – Klammer-Verlust!)</span>';
+        explanation = '<strong>Funktionswandel durch Punktmutation!</strong> Alanin besitzt nur eine winzige Methylgruppe (<span class="font-mono">-CH₃</span>) ohne aromatischen Phenolring: Doppelstrang-DNA kann <strong>nicht mehr um 90° geknickt</strong> und nicht mehr geschreddert werden – das Enzym schneidet nur noch Einzelstrang-DNA (diagnostischer RNA-Sensor statt Zell-Killer)!';
+      } else if (curAA === 'STOP') {
+        statusBadge = '<span class="px-3 py-1 rounded-full text-xs font-extrabold bg-rose-600 text-white">Nonsense-Mutation (Kettenabbruch am Ribosom!)</span>';
+        explanation = `Das Codon <span class="font-mono">${curCodon}</span> beendet die Translation vorzeitig bei Position 1069 – dem unvollständigen Protein fehlt u. a. Asp1213 des RuvC-Zentrums (Totalausfall).`;
+      } else {
+        statusBadge = `<span class="px-3 py-1 rounded-full text-xs font-extrabold bg-amber-500/20 text-amber-800 dark:text-amber-300">Missense-Mutation (Tyr1069 → ${curAA})</span>`;
+        explanation = isAromatic
+          ? `${curAA} trägt ebenfalls ein aromatisches Ringsystem – π-Stacking mit den DNA-Basen bleibt teilweise denkbar, ohne die exakte Hydroxylgruppen-Geometrie von Tyrosin.`
+          : `Ohne aromatischen Ring kann <strong>${curAA}</strong> nicht per π-Stacking zwischen die DNA-Basen interkalieren – die 90°-Knick-Mechanik für Doppelstrang-DNA bricht ein!`;
+      }
+
+      const bases = ['T', 'C', 'A', 'G'];
+      document.getElementById('pos1069-editor-stage').innerHTML = `
+        <div class="lg:col-span-7 space-y-4">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-slate-500">Schnellwahl Position 1069:</span>
+            <button onclick="setPos1069Codon('TAT')" class="px-3 py-1.5 rounded-xl text-xs font-bold border ${curCodon==='TAT'?'bg-emerald-600 text-white border-emerald-600':'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700'}">Wildtyp TAT (Tyr)</button>
+            <button onclick="setPos1069Codon('TAC')" class="px-3 py-1.5 rounded-xl text-xs font-bold border ${curCodon==='TAC'?'bg-teal-600 text-white border-teal-600':'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700'}">Stille Mutation TAC (Tyr)</button>
+            <button onclick="setPos1069Codon('GCT')" class="px-3 py-1.5 rounded-xl text-xs font-bold border ${curCodon==='GCT'?'bg-rose-600 text-white border-rose-600':'bg-white dark:bg-slate-900 border-slate-300 dark:border-slate-700'}">Missense GCT (Y1069A!)</button>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-4 p-3.5 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800">
+            ${[0, 1, 2].map(bIdx => `
+              <div class="flex items-center gap-1.5">
+                <span class="text-xs font-bold text-slate-400">${bIdx + 1}. Base${bIdx===2?' (Wobble)':''}:</span>
+                ${bases.map(letter => `
+                  <button onclick="setPos1069SingleBase(${bIdx}, '${letter}')" class="w-8 h-8 rounded-lg font-mono text-xs font-extrabold transition ${
+                    curCodon[bIdx] === letter
+                      ? 'bg-sky-600 text-white shadow'
+                      : 'bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200'
+                  }">${letter}</button>
+                `).join('')}
+              </div>
+            `).join('')}
+          </div>
+
+          <div class="space-y-2">
+            <div>${statusBadge}</div>
+            <p class="text-xs sm:text-sm text-slate-700 dark:text-slate-300 leading-relaxed">${explanation}</p>
+          </div>
+        </div>
+
+        <!-- Visuelle Struktur-Funktions-Grafik rechts (Phenol-Keil vs. kleine Seitenkette) -->
+        <div class="lg:col-span-5">
+          <svg viewBox="0 0 360 205" class="w-full h-auto rounded-2xl bg-slate-900 border border-slate-800 p-3">
+            ${isAromatic ? `
+              <text x="180" y="24" text-anchor="middle" fill="#fde047" font-size="11.5" font-weight="800">⬡ Aromatischer Ring (${curAA}1069) aktiv</text>
+              <!-- 90 Grad geknickte DNA -->
+              <path d="M 310 75 L 185 75 Q 155 75, 155 105 L 155 182" fill="none" stroke="#ef4444" stroke-width="6" stroke-linecap="round"/>
+              <path d="M 310 92 L 200 92 Q 172 92, 172 118 L 172 182" fill="none" stroke="#d946ef" stroke-width="5.5" stroke-linecap="round"/>
+              <!-- Gelber Phenol-Keil -->
+              <polygon points="145,58 162,67 162,85 145,94 128,85 128,67" fill="#eab308" stroke="#fef9c3" stroke-width="2"/>
+              <text x="86" y="79" text-anchor="middle" fill="#fef08a" font-size="10" font-weight="700">π-Stacking-Keil</text>
+              <text x="255" y="138" text-anchor="middle" fill="#86efac" font-size="10.5" font-weight="800">✓ 90°-Knick &amp; dsDNA-Shredding</text>
+            ` : `
+              <text x="180" y="24" text-anchor="middle" fill="#fda4af" font-size="11.5" font-weight="800">⚠️ Kein aromatischer Keil (${curAA}1069)</text>
+              <!-- Starre ungeknickte Doppelstrang-DNA -->
+              <line x1="55" y1="82" x2="310" y2="82" stroke="#ef4444" stroke-width="6" stroke-linecap="round"/>
+              <line x1="55" y1="100" x2="310" y2="100" stroke="#d946ef" stroke-width="6" stroke-linecap="round"/>
+              <g stroke="#cbd5e1" stroke-width="2">
+                <line x1="90" y1="84" x2="90" y2="98"/><line x1="130" y1="84" x2="130" y2="98"/>
+                <line x1="170" y1="84" x2="170" y2="98"/><line x1="210" y1="84" x2="210" y2="98"/>
+                <line x1="250" y1="84" x2="250" y2="98"/><line x1="285" y1="84" x2="285" y2="98"/>
+              </g>
+              <circle cx="170" cy="52" r="9" fill="#64748b" stroke="#cbd5e1" stroke-width="1.5"/>
+              <text x="170" y="39" text-anchor="middle" fill="#cbd5e1" font-size="9.5">${curAA === 'Ala' ? 'Winzige -CH₃ Gruppe' : curAA}</text>
+              <text x="180" y="142" text-anchor="middle" fill="#fca5a5" font-size="10.5" font-weight="800">✗ Starre dsDNA knickt nicht auf!</text>
+              <text x="180" y="160" text-anchor="middle" fill="#38bdf8" font-size="9.5">(Bei Y1069A nur noch ssDNA-Sensor)</text>
+            `}
+          </svg>
+        </div>
+      `;
+    }
+
+    // =========================================================================
+    // 8. MODUL 5: 5-FRAGEN-SELBSTTEST & AUFKLAPPBARE MUSTERLÖSUNGEN
+    // =========================================================================
+    const QUIZ_ITEMS = [
+      {
+        q: '1. Was unterscheidet den Auslösemechanismus (Trigger) von CRISPR-Cas12a2 grundlegend von CRISPR-Cas9?',
+        opts: [
+          'Cas12a2 erkennt Doppelstrang-DNA über ein 5\'-NGG-3\'-PAM-Motiv und setzt genau einen Schnitt.',
+          'Cas12a2 erkennt komplementäre Einzelstrang-RNA (mit benachbarter PFS) und klappt daraufhin um ~50 Å in den DNA-Shredder-Zustand auf.',
+          'Cas12a2 benötigt überhaupt keine Leit-RNA, sondern spaltet zufällig Proteine.'
+        ],
+        correct: 1,
+        reason: 'Exakt! Erst die Paarung von crRNA und Ziel-mRNA (samt PFS) entriegelt allosterisch das RuvC-Zentrum (Übergang PDB 8D49 → 8D4B → 8D4A).'
+      },
+      {
+        q: '2. Welche chemische Rolle spielen die drei Aminosäurereste Tyr465, Tyr1069 und Tyr1080 im aktiven Komplex (PDB 8D4A)?',
+        opts: [
+          'Ihre aromatischen Phenolringe wirken über π-Stacking als Keile, erzwingen einen 90°-Knick der dsDNA und schmelzen sie lokal auf.',
+          'Sie komplexieren Apolipoprotein E an der Außenseite der Lipid-Nanopartikel.',
+          'Sie verknüpfen gebrochene DNA-Enden wieder miteinander (Ligase-Aktivität).'
+        ],
+        correct: 0,
+        reason: 'Genau richtig: Ohne diese aromatischen Klammern (wie in der Punktmutante Y1069A) kann intakte Doppelstrang-DNA nicht mehr aufgebogen und geschreddert werden.'
+      },
+      {
+        q: '3. Warum gilt mutiertes p53 in ~40 % aller Tumoren als Paradefall für den Cas12a2-Ansatz gegenüber klassischem Wirkstoff-Docking?',
+        opts: [
+          'Weil p53 außerhalb des Körpers auf der Hautoberfläche liegt.',
+          'Weil mutiertem p53 eine geeignete hydrophobe Tasche für kleine Inhibitoren fehlt („undruggable“), SuCas12a2 die Krebszelle aber über eine einzige Punktmutation auf der p53-mRNA erkennt.',
+          'Weil Cas12a2 ein kleines Schmerzmittel-Molekül aus 20 Atomen ist.'
+        ],
+        correct: 1,
+        reason: 'Volltreffer! Die Spezifität verlagert sich von einer fehlenden Proteintasche auf die präzise Basenpaarung der mRNA.'
+      },
+      {
+        q: '4. SuCas12a2 und GeCas12a2 zeigen nur ~40 % DNA-Sequenzähnlichkeit, stimmen aber in ~88 % ihrer Aminosäuren überein. Wie lässt sich das erklären?',
+        opts: [
+          'Durch den degenerierten (redundanten) genetischen Code: Synonyme Codons (v. a. an der 3. Wobble-Position) codieren für dieselben Aminosäuren.',
+          'Weil die Cryo-EM-Auflösung keine DNA-Basen unterscheiden kann.',
+          'Weil deutsche Bodenbakterien andere Aminosäuren besitzen als US-Bakterien.'
+        ],
+        correct: 0,
+        reason: 'Richtig! Trotz stark abweichender Nukleotidsequenz entsteht fast dieselbe Primärsequenz und 3D-Proteinfaltung.'
+      },
+      {
+        q: '5. Warum bleiben gesunde menschliche Zellen verschont, selbst wenn ein LNP mit GeCas12a2-mRNA und HPV-E6/E7-Leit-RNA in sie eindringt?',
+        opts: [
+          'Weil gesunde Zellen überhaupt keine Ribosomen zur Translation besitzen.',
+          'Weil gesunde Zellen keine virale E6/E7-mRNA exprimieren und GeCas12a2 daher in der geschlossenen, autoinhibierten Konformation (analog PDB 8D49) verharrt.',
+          'Weil gesunde Zellen im Zellkern nur Einzelstrang-RNA statt DNA enthalten.'
+        ],
+        correct: 1,
+        reason: 'Perfekt! Die Sicherheitsbremse öffnet sich ausschließlich in Zellen, in denen das virale Ziel-Transkript tatsächlich vorliegt.'
+      }
+    ];
+
+    function renderQuiz() {
+      const answeredKeys = Object.keys(state.quizAnswers);
+      let points = 0;
+      answeredKeys.forEach(k => {
+        if (state.quizAnswers[k] === QUIZ_ITEMS[k].correct) points++;
+      });
+
+      document.getElementById('quiz-score-badge').textContent = `Punkte: ${points} / ${QUIZ_ITEMS.length}`;
+      document.getElementById('quiz-progress-bar').style.width = `${(answeredKeys.length / QUIZ_ITEMS.length) * 100}%`;
+
+      document.getElementById('quiz-list').innerHTML = QUIZ_ITEMS.map((item, qIdx) => {
+        const picked = state.quizAnswers[qIdx];
+        const done = picked !== undefined;
+        return `
+          <div class="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 space-y-2.5">
+            <div class="text-xs sm:text-sm font-extrabold text-slate-900 dark:text-white">${item.q}</div>
+            <div class="space-y-1.5">
+              ${item.opts.map((opt, oIdx) => {
+                let cls = 'border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:border-sky-400';
+                if (done) {
+                  if (oIdx === item.correct) cls = 'border-2 border-emerald-500 bg-emerald-500/15 font-bold';
+                  else if (oIdx === picked) cls = 'border-2 border-rose-500 bg-rose-500/15';
+                }
+                return `
+                  <button onclick="selectQuizOption(${qIdx}, ${oIdx})" class="w-full text-left px-3.5 py-2.5 rounded-xl border text-xs transition ${cls}">
+                    ${opt}
+                  </button>
+                `;
+              }).join('')}
+            </div>
+            ${done ? `
+              <div class="text-xs pt-1 font-medium leading-relaxed ${picked === item.correct ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'}">
+                ${picked === item.correct ? '✅ ' : '❌ '}${item.reason}
+              </div>
+            ` : ''}
+          </div>
+        `;
+      }).join('');
+    }
+
+    function selectQuizOption(qIdx, oIdx) {
+      state.quizAnswers[qIdx] = oIdx;
+      renderQuiz();
+    }
+
+    function resetQuiz() {
+      state.quizAnswers = {};
+      renderQuiz();
+    }
+
+    function toggleSolution(id) {
+      document.getElementById(id).classList.toggle('hidden');
+    }
+
+    // =========================================================================
+    // 9. INITIALISIERUNG BEIM SEITENSTART
+    // =========================================================================
+    window.onload = function () {
+      renderWorkflowPrompts();
+      switchMainTab(1);
+      setSchemaState(1);
+      renderTrainer();
+      setOncoScenario('hpv');
+      renderCodeExplorer();
+      renderQuiz();
+    };
+  </script>
+</body>
+</html>
