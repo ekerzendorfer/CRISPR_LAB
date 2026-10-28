@@ -262,11 +262,26 @@
       <!-- Hauptkarte Modul 1 -->
       <div class="beamer-card rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-xl p-4 sm:p-6 space-y-5">
 
+        <!-- NEU: 2D-System-Umschalter: DNA-Shredder SuCas12a2 vs. Präzisionsschere SpCas9 -->
+        <div class="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-slate-100 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
+          <div class="flex items-center gap-2">
+            <span class="text-xs font-extrabold uppercase tracking-wider text-slate-500 dark:text-slate-400">2D-Funktions-Schema wählen:</span>
+          </div>
+          <div class="flex items-center gap-2 flex-wrap">
+            <button id="schema-sys-cas12a2" onclick="setSchemaEnzyme('cas12a2')" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition bg-rose-600 text-white shadow">
+              💥 DNA-Shredder SuCas12a2 (mRNA-Trigger → Zelltod)
+            </button>
+            <button id="schema-sys-cas9" onclick="setSchemaEnzyme('cas9')" class="px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-sky-400">
+              ✂️ Präzisionsschere SpCas9 (DNA-Trigger → Gen-Reparatur)
+            </button>
+          </div>
+        </div>
+
         <!-- Kopfzeile + Animations-Steuerung mit Fortschrittsbalken -->
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
           <div>
-            <span class="text-xs font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400">Dreistufige allosterische Aktivierung</span>
-            <h2 class="text-base sm:text-xl font-extrabold text-slate-900 dark:text-white mt-0.5">
+            <span id="schema-kicker" class="text-xs font-bold uppercase tracking-wider text-sky-600 dark:text-sky-400">Dreistufige allosterische Aktivierung (SuCas12a2)</span>
+            <h2 id="schema-main-heading" class="text-base sm:text-xl font-extrabold text-slate-900 dark:text-white mt-0.5">
               Vom molekularen Sicherheitsschloss (8D49) zum 90°-DNA-Shredder (8D4A)
             </h2>
           </div>
@@ -289,42 +304,43 @@
           <div id="schema-progress-bar" class="h-full bg-gradient-to-r from-emerald-500 via-amber-500 to-rose-500 transition-all duration-300" style="width: 33.33%"></div>
         </div>
 
-        <!-- 3 Zustands-Buttons -->
+        <!-- 3 Zustands-Buttons (werden dynamisch für Cas12a2 oder Cas9 beschriftet) -->
         <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
           <button onclick="setSchemaState(1)" id="schema-tab-1" class="text-left p-3.5 rounded-2xl border transition">
             <div class="flex items-center justify-between text-xs font-bold">
-              <span class="text-emerald-600 dark:text-emerald-400">① Zustand 1 · Gesunde Zelle</span>
-              <span class="font-mono px-2 py-0.5 rounded bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300">PDB 8D49 · 3,20 Å</span>
+              <span id="schema-tab1-kicker" class="text-emerald-600 dark:text-emerald-400">① Zustand 1 · Gesunde Zelle</span>
+              <span id="schema-tab1-pdb" class="font-mono px-2 py-0.5 rounded bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300">PDB 8D49 · 3,20 Å</span>
             </div>
-            <div class="text-sm font-extrabold mt-1">Inaktiv / Autoinhibiert</div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Geschlossene „Austern-Form“: RuvC verdeckt, dsDNA prallt ab (100 % Zellschutz).</p>
+            <div id="schema-tab1-title" class="text-sm font-extrabold mt-1">Inaktiv / Autoinhibiert</div>
+            <p id="schema-tab1-sub" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Geschlossene „Austern-Form“: RuvC verdeckt, dsDNA prallt ab (100 % Zellschutz).</p>
           </button>
 
           <button onclick="setSchemaState(2)" id="schema-tab-2" class="text-left p-3.5 rounded-2xl border transition">
             <div class="flex items-center justify-between text-xs font-bold">
-              <span class="text-amber-600 dark:text-amber-400">② Zustand 2 · mRNA-Kontakt</span>
-              <span class="font-mono px-2 py-0.5 rounded bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300">PDB 8D4B · 2,92 Å</span>
+              <span id="schema-tab2-kicker" class="text-amber-600 dark:text-amber-400">② Zustand 2 · mRNA-Kontakt</span>
+              <span id="schema-tab2-pdb" class="font-mono px-2 py-0.5 rounded bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300">PDB 8D4B · 2,92 Å</span>
             </div>
-            <div class="text-sm font-extrabold mt-1">Allosterische 50-Å-Entriegelung</div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Ziel-mRNA + 5'-GAAAG-3' PFS spannen REC-Lappen auf; Insertion-Domäne schaltet RuvC frei.</p>
+            <div id="schema-tab2-title" class="text-sm font-extrabold mt-1">Allosterische 50-Å-Entriegelung</div>
+            <p id="schema-tab2-sub" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Ziel-mRNA + 5'-GAAAG-3' PFS spannen REC-Lappen auf; Insertion-Domäne schaltet RuvC frei.</p>
           </button>
 
           <button onclick="setSchemaState(3)" id="schema-tab-3" class="text-left p-3.5 rounded-2xl border transition">
             <div class="flex items-center justify-between text-xs font-bold">
-              <span class="text-rose-600 dark:text-rose-400">③ Zustand 3 · Tumorzelle</span>
-              <span class="font-mono px-2 py-0.5 rounded bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300">PDB 8D4A · 2,74 Å</span>
+              <span id="schema-tab3-kicker" class="text-rose-600 dark:text-rose-400">③ Zustand 3 · Tumorzelle</span>
+              <span id="schema-tab3-pdb" class="font-mono px-2 py-0.5 rounded bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300">PDB 8D4A · 2,74 Å</span>
             </div>
-            <div class="text-sm font-extrabold mt-1">90°-DNA-Knick &amp; Shredding</div>
-            <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">3 Tyrosin-Klammern schmelzen dsDNA auf → Spaltung an Mg²⁺ → programmierter Zelltod.</p>
+            <div id="schema-tab3-title" class="text-sm font-extrabold mt-1">90°-DNA-Knick &amp; Shredding</div>
+            <p id="schema-tab3-sub" class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">3 Tyrosin-Klammern schmelzen dsDNA auf → Spaltung an Mg²⁺ → programmierter Zelltod.</p>
           </button>
         </div>
 
         <!-- Zweispaltige Hauptbühne: Links großes SVG + Farblegende, Rechts Struktur-Kennzahlen & 3D-Sprung -->
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
 
-          <!-- LINKE SPALTE (7/12): Großes beschriftetes Vektor-SVG -->
+          <!-- LINKE SPALTE (7/12): Großes beschriftetes Vektor-SVG (SuCas12a2 ODER SpCas9) -->
           <div class="lg:col-span-7 space-y-3">
             <div class="rounded-2xl bg-slate-900 border border-slate-800 p-3 sm:p-4 shadow-inner overflow-hidden">
+              <!-- SVG 1: SuCas12a2 (DNA-Shredder) -->
               <svg id="su-schema-svg" viewBox="0 0 780 420" class="w-full h-auto select-none" role="img" aria-label="Dreistufiges Funktionsschema von SuCas12a2">
                 <defs>
                   <linearGradient id="nucBodyGrad" x1="0" y1="0" x2="1" y2="1">
@@ -482,6 +498,93 @@
                     <text x="236" y="302" text-anchor="middle" fill="#f87171" font-size="10.5" font-weight="800">💥 DNA-Fragmente</text>
                     <text x="236" y="316" text-anchor="middle" fill="#fca5a5" font-size="9.5">(Programmierter Zelltod)</text>
                   </g>
+                </g>
+              </svg>
+
+              <!-- NEU: SVG 2: SpCas9 (Präzisionsschere im 2D-Schema) -->
+              <svg id="cas9-schema-svg" viewBox="0 0 780 420" class="hidden w-full h-auto select-none" role="img" aria-label="Dreistufiges Funktionsschema von SpCas9">
+                <rect x="0" y="0" width="780" height="420" rx="16" fill="#0b1120"/>
+                <text id="cas9-svg-headline" x="24" y="34" fill="#f1f5f9" font-size="14.5" font-weight="800" font-family="Inter, sans-serif">
+                  SpCas9 · Zustand 1: PAM-Suche auf intakter Doppelstrang-DNA (HNH &amp; RuvC inaktiv)
+                </text>
+
+                <!-- NUC-Lappen (untere Hälfte von SpCas9, Kette B) -->
+                <g id="cas9-svg-nuc">
+                  <path d="M 125 235 C 120 342, 240 382, 395 380 C 555 378, 650 332, 642 235 C 635 198, 555 205, 485 224 C 425 238, 355 238, 295 224 C 225 205, 132 198, 125 235 Z"
+                        fill="url(#nucBodyGrad)" stroke="#94a3b8" stroke-width="2.2"/>
+                  <text x="385" y="362" text-anchor="middle" fill="#cbd5e1" font-size="12" font-weight="700">NUC-Lappen (SpCas9 · Kette B, 1368 AS · PAM-Interaktionsdomäne rechts)</text>
+                </g>
+
+                <!-- REC-Lappen (obere Hälfte von SpCas9) -->
+                <g id="cas9-svg-rec" class="svg-morph">
+                  <path d="M 140 175 C 140 88, 260 72, 385 78 C 510 72, 625 95, 620 175 C 615 212, 515 225, 385 225 C 255 225, 145 212, 140 175 Z"
+                        fill="url(#recBodyGrad)" stroke="#cbd5e1" stroke-width="2.2" fill-opacity="0.94"/>
+                  <text x="385" y="108" text-anchor="middle" fill="#f8fafc" font-size="12.5" font-weight="800">REC-Erkennungslappen (prüft 20-nt-Paarung im R-Loop)</text>
+                </g>
+
+                <!-- Single Guide RNA (sgRNA, Kette A, blau) -->
+                <g id="cas9-svg-sgrna">
+                  <path d="M 168 160 L 230 160 L 245 135 L 260 160 L 495 160" fill="none" stroke="#3b82f6" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+                  <text x="345" y="146" text-anchor="middle" fill="#93c5fd" font-size="11" font-weight="700">Single Guide RNA (sgRNA · Kette A: 20-nt-Spacer + tracrRNA-Gerüst)</text>
+                </g>
+
+                <!-- ZUSTAND 1 (Cas9): Intakte dsDNA wird nach 5'-NGG-3' PAM abgetastet -->
+                <g id="cas9-state1-group" class="svg-fade">
+                  <line x1="150" y1="212" x2="645" y2="212" stroke="#ef4444" stroke-width="6" stroke-linecap="round"/>
+                  <line x1="150" y1="234" x2="645" y2="234" stroke="#d946ef" stroke-width="6" stroke-linecap="round"/>
+                  <g stroke="#cbd5e1" stroke-width="2">
+                    <line x1="190" y1="214" x2="190" y2="232"/><line x1="230" y1="214" x2="230" y2="232"/>
+                    <line x1="270" y1="214" x2="270" y2="232"/><line x1="310" y1="214" x2="310" y2="232"/>
+                    <line x1="350" y1="214" x2="350" y2="232"/><line x1="390" y1="214" x2="390" y2="232"/>
+                    <line x1="430" y1="214" x2="430" y2="232"/><line x1="470" y1="214" x2="470" y2="232"/>
+                    <line x1="510" y1="214" x2="510" y2="232"/><line x1="550" y1="214" x2="550" y2="232"/>
+                  </g>
+                  <rect x="520" y="252" width="168" height="36" rx="9" fill="#1e293b" stroke="#eab308" stroke-width="1.8"/>
+                  <text x="604" y="274" text-anchor="middle" fill="#fde047" font-size="11" font-weight="800">🔍 Suche nach 5'-NGG-3' (PAM)</text>
+                </g>
+
+                <!-- ZUSTAND 2 & 3 (Cas9): Geordneter R-Loop (Zielstrang C paart mit sgRNA, Nicht-Zielstrang D verdrängt) -->
+                <g id="cas9-rloop-group" class="svg-fade" style="opacity: 0;">
+                  <!-- Links und rechts geschlossene Doppelhelix, in der Mitte R-Loop (KEIN 90°-Knick!) -->
+                  <path d="M 140 218 L 255 218 Q 280 218, 295 182 L 485 182 Q 505 218, 525 218 L 655 218" fill="none" stroke="#ef4444" stroke-width="6" stroke-linecap="round"/>
+                  <path d="M 140 236 L 255 236 Q 285 268, 315 268 L 475 268 Q 505 268, 525 236 L 655 236" fill="none" stroke="#d946ef" stroke-width="6" stroke-linecap="round"/>
+                  <!-- Wasserstoffbrücken zwischen sgRNA (blau) und Ziel-DNA (rot) im R-Loop -->
+                  <g stroke="#fb923c" stroke-width="2.4">
+                    <line x1="305" y1="163" x2="305" y2="179"/><line x1="330" y1="163" x2="330" y2="179"/>
+                    <line x1="355" y1="163" x2="355" y2="179"/><line x1="380" y1="163" x2="380" y2="179"/>
+                    <line x1="405" y1="163" x2="405" y2="179"/><line x1="430" y1="163" x2="430" y2="179"/>
+                    <line x1="455" y1="163" x2="455" y2="179"/><line x1="480" y1="163" x2="480" y2="179"/>
+                  </g>
+                  <!-- PAM-Box rechts am R-Loop -->
+                  <rect x="528" y="210" width="94" height="32" rx="7" fill="#eab308" stroke="#fef9c3" stroke-width="1.8"/>
+                  <text x="575" y="230" text-anchor="middle" fill="#0f172a" font-size="10.5" font-weight="800" font-family="JetBrains Mono, monospace">PAM: 5'-NGG-3'</text>
+                  <text x="395" y="202" text-anchor="middle" fill="#fca5a5" font-size="10.5" font-weight="700">Zielstrang-DNA (Kette C · paart geordnet im R-Loop)</text>
+                  <text x="395" y="286" text-anchor="middle" fill="#f0abfc" font-size="10.5" font-weight="700">Nicht-Zielstrang-DNA (Kette D)</text>
+                </g>
+
+                <!-- HNH-Domäne (schneidet Kette C) & RuvC-Domäne (schneidet Kette D) -->
+                <g id="cas9-hnh-domain" class="svg-morph">
+                  <rect x="362" y="116" width="118" height="36" rx="10" fill="#065f46" stroke="#22c55e" stroke-width="2"/>
+                  <text x="421" y="138" text-anchor="middle" fill="#bbf7d0" font-size="10.5" font-weight="800">HNH-Domäne (His840)</text>
+                </g>
+
+                <g id="cas9-ruvc-domain" class="svg-morph">
+                  <rect x="362" y="296" width="118" height="42" rx="10" fill="#064e3b" stroke="#22c55e" stroke-width="2"/>
+                  <text x="421" y="314" text-anchor="middle" fill="#86efac" font-size="10.5" font-weight="800">RuvC-Domäne (Asp10)</text>
+                  <text x="421" y="329" text-anchor="middle" fill="#ecfdf5" font-size="9" font-weight="700">Mg²⁺-Katalyse</text>
+                </g>
+
+                <!-- ZUSTAND 3 (Cas9): Exakt 1 glatter Doppelstrangbruch (in cis) + DNA-Reparatur -->
+                <g id="cas9-state3-cut" class="svg-fade" style="opacity: 0;">
+                  <!-- Scheren-Schnittmarkierung genau 3 bp vor dem PAM -->
+                  <line x1="462" y1="168" x2="462" y2="282" stroke="#22c55e" stroke-width="3" stroke-dasharray="4 3"/>
+                  <circle cx="462" cy="182" r="8" fill="#22c55e" stroke="#ecfdf5" stroke-width="1.8"/>
+                  <circle cx="462" cy="268" r="8" fill="#22c55e" stroke="#ecfdf5" stroke-width="1.8"/>
+                  <text x="462" y="162" text-anchor="middle" fill="#4ade80" font-size="11" font-weight="800">✂️ 1× Schnitt</text>
+
+                  <rect x="525" y="294" width="232" height="54" rx="12" fill="#064e3b" stroke="#34d399" stroke-width="1.8"/>
+                  <text x="641" y="316" text-anchor="middle" fill="#ecfdf5" font-size="11" font-weight="800">✓ Genau 1 Schnitt (in cis)</text>
+                  <text x="641" y="334" text-anchor="middle" fill="#a7f3d0" font-size="10">Zelle überlebt → Gen-Reparatur (NHEJ/HDR)</text>
                 </g>
               </svg>
             </div>
@@ -763,8 +866,8 @@
                 <button onclick="setLayerPreset('no_protein')" class="px-2.5 py-1 rounded-lg text-[11px] font-extrabold bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 border border-indigo-500/30 hover:bg-indigo-500/25 transition">
                   🧬 Protein ausblenden (Nur Nukleinsäuren &amp; Aktives Zentrum)
                 </button>
-                <button onclick="setLayerPreset('all')" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 transition">
-                  👁️ Alle 8 Ebenen einblenden
+                <button id="btn-toggle-all-layers" onclick="toggleAllLayers()" class="px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 transition">
+                  🙈 Alle 8 Ebenen ausblenden
                 </button>
               </div>
             </div>
@@ -1400,7 +1503,8 @@
       beamer: false,
       activeTab: 1,
 
-      // Modul 1: 2D-Schema
+      // Modul 1: 2D-Schema (umschaltbar zwischen 'cas12a2' und 'cas9')
+      schemaEnzyme: 'cas12a2',
       schemaState: 1,
       autoAnimTimer: null,
 
@@ -1643,9 +1747,119 @@
       }
     };
 
+    const CAS9_SCHEMA_STATES = {
+      1: {
+        pdb: '5F9R',
+        res: '3,40 Å',
+        badge: '① Zustand 1 · PAM-Patrouille (Suchmodus)',
+        badgeCls: 'bg-sky-500/15 text-sky-700 dark:text-sky-300 border-sky-500/30',
+        svgTitle: 'SpCas9 · Zustand 1: PAM-Suche auf intakter Doppelstrang-DNA (HNH & RuvC inaktiv)',
+        title: 'SpCas9 tastet Doppelstrang-DNA nach dem 5\'-NGG-3\'-PAM-Motiv ab',
+        desc: 'SpCas9 ist mit einer künstlichen Single Guide RNA (sgRNA, Kette A, blau) beladen. Im Gegensatz zu Cas12a2 sucht Cas9 im Zellkern direkt nach doppelsträngiger DNA. Solange kein passendes 5\'-NGG-3\'-PAM-Schild vorliegt, bleibt die DNA-Helix geschlossen.',
+        metrics: [
+          ['Enzym & Herkunft', 'SpCas9 aus Streptococcus pyogenes (Chemie-Nobelpreis 2020)'],
+          ['Such-Kompass', 'Künstliche sgRNA (Verschmelzung aus crRNA + tracrRNA, Kette A)'],
+          ['Erkanntes Zielmolekül', 'Doppelstrang-DNA (dsDNA) mit benachbartem 5\'-NGG-3\'-PAM'],
+          ['Nuklease-Zustand', 'HNH- und RuvC-Domänen in Ruhestellung → kein Schnitt ohne PAM']
+        ],
+        hotspotTarget: 'overview'
+      },
+      2: {
+        pdb: '5F9R',
+        res: '3,40 Å',
+        badge: '② Zustand 2 · PAM-Erkennung & R-Loop-Bildung',
+        badgeCls: 'bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30',
+        svgTitle: 'SpCas9 · Zustand 2: 5\'-NGG-3\'-PAM erkannt → Geordnete R-Loop-Aufwindung (ohne 90°-Knick)',
+        title: 'Geordnete R-Loop-Bildung über 20 Basenpaare (ohne Tyrosin-Brecheisen)',
+        desc: 'Sobald die PAM-Interaktionsdomäne 5\'-NGG-3\' auf der DNA bindet, windet SpCas9 die Doppelhelix lokal auf. Der DNA-Zielstrang (Kette C, rot) paart Base für Base mit der 20-nt-Leitregion der sgRNA (R-Loop), während der Nicht-Zielstrang (Kette D, magenta) geordnet verdrängt wird.',
+        metrics: [
+          ['PDB-Referenz & Methode', 'PDB 5F9R · Röntgenstrukturanalyse (3,40 Å · R-Loop-Komplex)'],
+          ['Beteiligte Ketten', 'Kette B (SpCas9) + Kette A (sgRNA) + Ketten C & D (Ziel-dsDNA)'],
+          ['Unterschied zu Cas12a2', 'Geordnete R-Loop-Einbettung im Protein statt 90°-Tyrosin-Knick außen'],
+          ['Prüfmechanismus', '20-nt-Watson-Crick-Prüfung zwischen sgRNA und DNA-Zielstrang']
+        ],
+        hotspotTarget: 'rnaduplex'
+      },
+      3: {
+        pdb: '5F9R',
+        res: '3,40 Å',
+        badge: '③ Zustand 3 · Präzisions-Doppelschnitt & Gen-Reparatur',
+        badgeCls: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
+        svgTitle: 'SpCas9 · Zustand 3: Genau 1 gezielter Doppelstrangbruch (HNH + RuvC) → Zelle überlebt!',
+        title: 'Zwei Schneideklingen (HNH + RuvC) setzen exakt 1 Schnitt – die Zelle lebt weiter!',
+        desc: 'Erst bei vollständiger 20-nt-Basenpaarung klappt die HNH-Domäne (His840) an den DNA-Zielstrang und die RuvC-Domäne (Asp10) an den freien Gegenstrang. Es entsteht genau ein glatter Doppelstrangbruch (3 bp vor dem PAM). Die Zelle überlebt und repariert das Gen!',
+        metrics: [
+          ['Schneide-Domänen', '2 getrennte Klingen: HNH (schneidet Kette C) + RuvC (schneidet Kette D)'],
+          ['Art der Spaltung', 'Streng „in cis“: Genau 1 gezielter Doppelstrangbruch, kein Shredding!'],
+          ['Schicksal der Zelle', 'Zelle bleibt am Leben → DNA-Reparatur (NHEJ / HDR)'],
+          ['Klinischer Einsatz', 'Gezielte Gen-Korrektur (z. B. Casgevy bei Sichelzellanämie)']
+        ],
+        hotspotTarget: 'ruvc'
+      }
+    };
+
+    function setSchemaEnzyme(enzymeKey) {
+      stopAutoAnim();
+      state.schemaEnzyme = enzymeKey;
+      const isCas12 = enzymeKey === 'cas12a2';
+
+      document.getElementById('schema-sys-cas12a2').className = isCas12
+        ? 'px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition bg-rose-600 text-white shadow'
+        : 'px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-rose-400';
+      document.getElementById('schema-sys-cas9').className = !isCas12
+        ? 'px-3.5 py-2 rounded-xl text-xs sm:text-sm font-extrabold transition bg-sky-600 text-white shadow'
+        : 'px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 hover:border-sky-400';
+
+      document.getElementById('su-schema-svg').classList.toggle('hidden', !isCas12);
+      document.getElementById('cas9-schema-svg').classList.toggle('hidden', isCas12);
+
+      document.getElementById('schema-kicker').textContent = isCas12
+        ? 'Dreistufige allosterische Aktivierung (SuCas12a2 · DNA-Shredder)'
+        : 'Dreistufige gezielte Gen-Editierung (SpCas9 · Präzisionsschere)';
+      document.getElementById('schema-main-heading').textContent = isCas12
+        ? 'Vom molekularen Sicherheitsschloss (8D49) zum 90°-DNA-Shredder (8D4A)'
+        : 'Von der PAM-Suche zum präzisen Einzel-Doppelstrangbruch (PDB 5F9R)';
+
+      // 3 Tab-Karten-Texte umschalten
+      if (isCas12) {
+        document.getElementById('schema-tab1-kicker').textContent = '① Zustand 1 · Gesunde Zelle';
+        document.getElementById('schema-tab1-pdb').textContent = 'PDB 8D49 · 3,20 Å';
+        document.getElementById('schema-tab1-title').textContent = 'Inaktiv / Autoinhibiert';
+        document.getElementById('schema-tab1-sub').textContent = 'Geschlossene „Austern-Form“: RuvC verdeckt, dsDNA prallt ab (100 % Zellschutz).';
+
+        document.getElementById('schema-tab2-kicker').textContent = '② Zustand 2 · mRNA-Kontakt';
+        document.getElementById('schema-tab2-pdb').textContent = 'PDB 8D4B · 2,92 Å';
+        document.getElementById('schema-tab2-title').textContent = 'Allosterische 50-Å-Entriegelung';
+        document.getElementById('schema-tab2-sub').textContent = 'Ziel-mRNA + 5\'-GAAAG-3\' PFS spannen REC-Lappen auf; Insertion-Domäne schaltet RuvC frei.';
+
+        document.getElementById('schema-tab3-kicker').textContent = '③ Zustand 3 · Tumorzelle';
+        document.getElementById('schema-tab3-pdb').textContent = 'PDB 8D4A · 2,74 Å';
+        document.getElementById('schema-tab3-title').textContent = '90°-DNA-Knick & Shredding';
+        document.getElementById('schema-tab3-sub').textContent = '3 Tyrosin-Klammern schmelzen dsDNA auf → Spaltung an Mg²⁺ → programmierter Zelltod.';
+      } else {
+        document.getElementById('schema-tab1-kicker').textContent = '① Zustand 1 · Suchmodus';
+        document.getElementById('schema-tab1-pdb').textContent = 'SpCas9 + sgRNA';
+        document.getElementById('schema-tab1-title').textContent = 'PAM-Patrouille auf dsDNA';
+        document.getElementById('schema-tab1-sub').textContent = 'Abtasten der Doppelstrang-DNA nach 5\'-NGG-3\'; HNH & RuvC bleiben noch inaktiv.';
+
+        document.getElementById('schema-tab2-kicker').textContent = '② Zustand 2 · DNA-Öffnung';
+        document.getElementById('schema-tab2-pdb').textContent = 'PDB 5F9R · R-Loop';
+        document.getElementById('schema-tab2-title').textContent = 'PAM-Bindung & R-Loop-Prüfung';
+        document.getElementById('schema-tab2-sub').textContent = 'Lokale DNA-Aufwindung neben 5\'-NGG-3\'; geordnete 20-nt-Paarung ohne 90°-Knick.';
+
+        document.getElementById('schema-tab3-kicker').textContent = '③ Zustand 3 · Gen-Korrektur';
+        document.getElementById('schema-tab3-pdb').textContent = 'PDB 5F9R · 3,40 Å';
+        document.getElementById('schema-tab3-title').textContent = '1× Präzisionsschnitt (HNH + RuvC)';
+        document.getElementById('schema-tab3-sub').textContent = 'Exakt 1 glatter Doppelstrangbruch (in cis) → Zelle überlebt & repariert das Gen!';
+      }
+
+      setSchemaState(state.schemaState);
+    }
+
     function setSchemaState(num) {
       state.schemaState = num;
-      const d = SCHEMA_STATES[num];
+      const isCas12 = state.schemaEnzyme === 'cas12a2';
+      const d = isCas12 ? SCHEMA_STATES[num] : CAS9_SCHEMA_STATES[num];
 
       // Fortschrittsbalken & Tab-Markierung
       document.getElementById('schema-progress-bar').style.width = `${(num / 3) * 100}%`;
@@ -1658,51 +1872,81 @@
           : 'text-left p-3.5 rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 hover:border-slate-400 transition';
       });
 
-      // SVG-Elemente animieren
-      document.getElementById('svg-headline').textContent = d.svgTitle;
-      const recLobe = document.getElementById('svg-rec');
-      const recSub = document.getElementById('svg-rec-sub');
-      const insDom = document.getElementById('svg-insertion');
-      const insSub = document.getElementById('svg-insertion-sub');
-      const targetMrna = document.getElementById('svg-target-mrna');
-      const guard1 = document.getElementById('svg-state1-guard');
-      const openInd = document.getElementById('svg-open-indicator');
-      const ready2 = document.getElementById('svg-state2-ready');
-      const shred3 = document.getElementById('svg-state3-shred');
+      if (isCas12) {
+        // SVG-Elemente für SuCas12a2 animieren
+        document.getElementById('svg-headline').textContent = d.svgTitle;
+        const recLobe = document.getElementById('svg-rec');
+        const recSub = document.getElementById('svg-rec-sub');
+        const insDom = document.getElementById('svg-insertion');
+        const insSub = document.getElementById('svg-insertion-sub');
+        const targetMrna = document.getElementById('svg-target-mrna');
+        const guard1 = document.getElementById('svg-state1-guard');
+        const openInd = document.getElementById('svg-open-indicator');
+        const ready2 = document.getElementById('svg-state2-ready');
+        const shred3 = document.getElementById('svg-state3-shred');
 
-      if (num === 1) {
-        recLobe.style.transform = 'translateY(0px) rotate(0deg)';
-        recSub.textContent = 'Versperren in gesunden Zellen den RuvC-Kanal';
-        insDom.style.transform = 'translate(0px, 0px)';
-        insSub.textContent = 'AS 938–1030 (Ruhelage)';
-        targetMrna.style.opacity = '0';
-        targetMrna.style.transform = 'translateY(-28px)';
-        guard1.style.opacity = '1';
-        openInd.style.opacity = '0';
-        ready2.style.opacity = '0';
-        shred3.style.opacity = '0';
-      } else if (num === 2) {
-        recLobe.style.transform = 'translateY(-64px) rotate(-5deg)';
-        recSub.textContent = 'Um ~50 Å nach oben aufgeklappt!';
-        insDom.style.transform = 'translate(18px, -16px)';
-        insSub.textContent = '15-Å-Shift → RuvC entriegelt';
-        targetMrna.style.opacity = '1';
-        targetMrna.style.transform = 'translateY(0px)';
-        guard1.style.opacity = '0';
-        openInd.style.opacity = '1';
-        ready2.style.opacity = '1';
-        shred3.style.opacity = '0';
+        if (num === 1) {
+          recLobe.style.transform = 'translateY(0px) rotate(0deg)';
+          recSub.textContent = 'Versperren in gesunden Zellen den RuvC-Kanal';
+          insDom.style.transform = 'translate(0px, 0px)';
+          insSub.textContent = 'AS 938–1030 (Ruhelage)';
+          targetMrna.style.opacity = '0';
+          targetMrna.style.transform = 'translateY(-28px)';
+          guard1.style.opacity = '1';
+          openInd.style.opacity = '0';
+          ready2.style.opacity = '0';
+          shred3.style.opacity = '0';
+        } else if (num === 2) {
+          recLobe.style.transform = 'translateY(-64px) rotate(-5deg)';
+          recSub.textContent = 'Um ~50 Å nach oben aufgeklappt!';
+          insDom.style.transform = 'translate(18px, -16px)';
+          insSub.textContent = '15-Å-Shift → RuvC entriegelt';
+          targetMrna.style.opacity = '1';
+          targetMrna.style.transform = 'translateY(0px)';
+          guard1.style.opacity = '0';
+          openInd.style.opacity = '1';
+          ready2.style.opacity = '1';
+          shred3.style.opacity = '0';
+        } else {
+          recLobe.style.transform = 'translateY(-68px) rotate(-6deg)';
+          recSub.textContent = 'Offen verriegelt durch RNA-Duplex';
+          insDom.style.transform = 'translate(22px, -18px)';
+          insSub.textContent = 'Hält RuvC im Shredder-Modus';
+          targetMrna.style.opacity = '1';
+          targetMrna.style.transform = 'translateY(0px)';
+          guard1.style.opacity = '0';
+          openInd.style.opacity = '1';
+          ready2.style.opacity = '0';
+          shred3.style.opacity = '1';
+        }
       } else {
-        recLobe.style.transform = 'translateY(-68px) rotate(-6deg)';
-        recSub.textContent = 'Offen verriegelt durch RNA-Duplex';
-        insDom.style.transform = 'translate(22px, -18px)';
-        insSub.textContent = 'Hält RuvC im Shredder-Modus';
-        targetMrna.style.opacity = '1';
-        targetMrna.style.transform = 'translateY(0px)';
-        guard1.style.opacity = '0';
-        openInd.style.opacity = '1';
-        ready2.style.opacity = '0';
-        shred3.style.opacity = '1';
+        // SVG-Elemente für SpCas9 animieren
+        document.getElementById('cas9-svg-headline').textContent = d.svgTitle;
+        const st1 = document.getElementById('cas9-state1-group');
+        const rloop = document.getElementById('cas9-rloop-group');
+        const cut3 = document.getElementById('cas9-state3-cut');
+        const hnh = document.getElementById('cas9-hnh-domain');
+        const ruvc = document.getElementById('cas9-ruvc-domain');
+
+        if (num === 1) {
+          st1.style.opacity = '1';
+          rloop.style.opacity = '0';
+          cut3.style.opacity = '0';
+          hnh.style.transform = 'translate(0px, -12px)';
+          ruvc.style.transform = 'translate(0px, 8px)';
+        } else if (num === 2) {
+          st1.style.opacity = '0';
+          rloop.style.opacity = '1';
+          cut3.style.opacity = '0';
+          hnh.style.transform = 'translate(22px, 6px)';
+          ruvc.style.transform = 'translate(22px, -6px)';
+        } else {
+          st1.style.opacity = '0';
+          rloop.style.opacity = '1';
+          cut3.style.opacity = '1';
+          hnh.style.transform = 'translate(38px, 24px)';
+          ruvc.style.transform = 'translate(38px, -18px)';
+        }
       }
 
       // Detail-Karte rechts aktualisieren
@@ -1722,7 +1966,10 @@
         </div>
         <div class="pt-2 flex flex-wrap gap-2">
           <button onclick="jumpToLabSingle('${d.pdb}', '${d.hotspotTarget}')" class="w-full sm:w-auto flex-1 px-4 py-2.5 rounded-xl text-xs font-extrabold bg-gradient-to-r from-sky-600 to-indigo-600 hover:from-sky-500 hover:to-indigo-500 text-white shadow transition text-center">
-            🔬 Struktur ${d.pdb} (${d.res}) jetzt live im 3D-Labor untersuchen →
+            🔬 Struktur ${d.pdb} (${d.res}) im 3D-Labor öffnen →
+          </button>
+          <button onclick="jumpToSplitDuel()" class="w-full sm:w-auto px-3.5 py-2.5 rounded-xl text-xs font-bold bg-slate-200/80 dark:bg-slate-800 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 transition text-center">
+            ⚖️ 3D-Duell (5F9R vs. 8D4A)
           </button>
         </div>
       `;
@@ -1926,10 +2173,30 @@
           </button>
         `;
       }).join('');
+
+      // Doppelstatus-Button aktualisieren ("Alle 8 Ebenen ausblenden" vs. "Alle 8 Ebenen einblenden")
+      const toggleAllBtn = document.getElementById('btn-toggle-all-layers');
+      if (toggleAllBtn) {
+        const allVisible = Object.values(state.layers).every(Boolean);
+        toggleAllBtn.innerHTML = allVisible
+          ? '🙈 Alle 8 Ebenen ausblenden'
+          : '👁️ Alle 8 Ebenen einblenden';
+        toggleAllBtn.className = allVisible
+          ? 'px-2.5 py-1 rounded-lg text-[11px] font-bold bg-slate-200/80 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-700 transition'
+          : 'px-2.5 py-1 rounded-lg text-[11px] font-extrabold bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30 transition';
+      }
     }
 
     function toggleLayer(layerKey) {
       state.layers[layerKey] = !state.layers[layerKey];
+      renderInteractiveLegend();
+      refreshAllActiveViewerStyles();
+    }
+
+    function toggleAllLayers() {
+      const allVisible = Object.values(state.layers).every(Boolean);
+      const nextState = !allVisible;
+      Object.keys(state.layers).forEach(k => { state.layers[k] = nextState; });
       renderInteractiveLegend();
       refreshAllActiveViewerStyles();
     }
@@ -2034,27 +2301,98 @@
       return state.dark ? '#090d16' : '#f1f5f9';
     }
 
+    /** Chemisch korrekte Formatierung von Element- und Aminosäuresymbolen für den Atom-Inspektor */
+    function formatAtomInspectorLabel(pdbId, atom) {
+      const resMap = {
+        MG: 'Mg²⁺', ZN: 'Zn²⁺',
+        ALA: 'Ala', ARG: 'Arg', ASN: 'Asn', ASP: 'Asp', CYS: 'Cys',
+        GLN: 'Gln', GLU: 'Glu', GLY: 'Gly', HIS: 'His', ILE: 'Ile',
+        LEU: 'Leu', LYS: 'Lys', MET: 'Met', PHE: 'Phe', PRO: 'Pro',
+        SER: 'Ser', THR: 'Thr', TRP: 'Trp', TYR: 'Tyr', VAL: 'Val'
+      };
+      const atomMap = { MG: 'Mg', ZN: 'Zn', FE: 'Fe', CA: 'Cα', CL: 'Cl', NA: 'Na' };
+      const rawRes = (atom.resn || '').trim().toUpperCase();
+      const rawAtom = (atom.atom || '').trim().toUpperCase();
+      const cleanRes = resMap[rawRes] || atom.resn;
+      const cleanAtom = (rawRes === 'MG' && rawAtom === 'MG') ? 'Mg'
+        : (rawRes === 'ZN' && rawAtom === 'ZN') ? 'Zn'
+        : (atomMap[rawAtom] || atom.atom);
+      return `${pdbId} · ${cleanRes} ${atom.resi} (Kette ${atom.chain} · Atom ${cleanAtom})`;
+    }
+
+    /**
+     * Synchronisiert im Split-Screen-Modus Drehwinkel (Quaternion), relativen Zoom
+     * und Verschiebungs-Delta, OHNE den individuellen Koordinaten-Ursprung des
+     * Partner-Moleküls zu überschreiben oder bei bloßem Mouse-Hover auszulösen.
+     */
     function setupCameraCoupling() {
       const leftEl = document.getElementById('mol-left');
       const rightEl = document.getElementById('mol-right');
+      let activeDragSide = null;
 
       const syncFromTo = (src, dst) => {
         if (!state.syncCameras || state.labViewMode === 'single' || !src || !dst || isSyncingView) return;
         isSyncingView = true;
         requestAnimationFrame(() => {
           try {
-            const view = src.getView();
-            dst.setView(view);
+            const sView = src.getView();
+            const dView = dst.getView();
+            if (!src._baseView) src._baseView = sView.slice();
+            if (!dst._baseView) dst._baseView = dView.slice();
+
+            const dx = sView[0] - src._baseView[0];
+            const dy = sView[1] - src._baseView[1];
+            const dz = sView[2] - src._baseView[2];
+
+            // Relatives Zoom-Verhältnis statt absolutem Kamera-Z-Wert übertragen
+            let newZoom = dst._baseView[3];
+            if (Math.abs(src._baseView[3]) > 1e-4) {
+              const ratio = sView[3] / src._baseView[3];
+              newZoom = dst._baseView[3] * ratio;
+            } else {
+              newZoom = dst._baseView[3] + (sView[3] - src._baseView[3]);
+            }
+
+            dst.setView([
+              dst._baseView[0] + dx,
+              dst._baseView[1] + dy,
+              dst._baseView[2] + dz,
+              newZoom,
+              sView[4],
+              sView[5],
+              sView[6],
+              sView[7]
+            ]);
             dst.render();
           } catch (_) {}
           isSyncingView = false;
         });
       };
 
-      ['mousemove', 'wheel', 'touchmove', 'mouseup', 'touchend'].forEach(evt => {
-        leftEl.addEventListener(evt, () => syncFromTo(vLeft, vRight), { passive: true });
-        rightEl.addEventListener(evt, () => syncFromTo(vRight, vLeft), { passive: true });
-      });
+      leftEl.addEventListener('mousedown', () => { activeDragSide = 'left'; }, { passive: true });
+      rightEl.addEventListener('mousedown', () => { activeDragSide = 'right'; }, { passive: true });
+      leftEl.addEventListener('touchstart', () => { activeDragSide = 'left'; }, { passive: true });
+      rightEl.addEventListener('touchstart', () => { activeDragSide = 'right'; }, { passive: true });
+
+      window.addEventListener('mouseup', () => { activeDragSide = null; }, { passive: true });
+      window.addEventListener('touchend', () => { activeDragSide = null; }, { passive: true });
+
+      leftEl.addEventListener('mousemove', () => {
+        if (activeDragSide === 'left') syncFromTo(vLeft, vRight);
+      }, { passive: true });
+      rightEl.addEventListener('mousemove', () => {
+        if (activeDragSide === 'right') syncFromTo(vRight, vLeft);
+      }, { passive: true });
+
+      leftEl.addEventListener('touchmove', () => {
+        if (activeDragSide === 'left') syncFromTo(vLeft, vRight);
+      }, { passive: true });
+      rightEl.addEventListener('touchmove', () => {
+        if (activeDragSide === 'right') syncFromTo(vRight, vLeft);
+      }, { passive: true });
+
+      leftEl.addEventListener('wheel', () => syncFromTo(vLeft, vRight), { passive: true });
+      rightEl.addEventListener('wheel', () => syncFromTo(vRight, vLeft), { passive: true });
     }
 
     function initAndRender3DLab() {
@@ -2186,26 +2524,27 @@
       viewer.clear();
       viewer.addModel(pdbData, 'pdb');
       applyStylesAndLayersToViewer(viewer, pdbId);
-      applyHotspotAndLabels(viewer, pdbId, false);
+      applyHotspotAndLabels(viewer, pdbId, true);
 
       viewer.setClickable({}, true, (atom) => {
         if (!atom) return;
-        document.getElementById('atom-inspector-text').textContent =
-          `${pdbId} · ${atom.resn} ${atom.resi} (Kette ${atom.chain} · Atom ${atom.atom})`;
+        document.getElementById('atom-inspector-text').textContent = formatAtomInspectorLabel(pdbId, atom);
       });
 
       if (state.spinOn) viewer.spin('y', 0.35);
       viewer.render();
     }
 
-    function applyHotspotAndLabels(viewer, pdbId, animate = true) {
+    function applyHotspotAndLabels(viewer, pdbId, updateCamera = true) {
       if (!viewer) return;
       viewer.removeAllLabels();
-      const dur = animate ? 600 : 0;
       const hs = state.hotspot;
 
       // Stile inkl. aktiver Filter-Ebenen synchronisieren
       applyStylesAndLayersToViewer(viewer, pdbId);
+
+      let targetSel = {};
+      let postZoomFactor = 1.0;
 
       if (hs === 'overview') {
         if (state.labelsOn) {
@@ -2217,14 +2556,15 @@
             if (pdbId === '8D4A' && state.layers.dna_cleaved) viewer.addLabel('90°-geknickte dsDNA', { backgroundColor: '#991b1b', fontColor: '#fff', fontSize: 11 }, { chain: 'D', hetflag: false, resi: 6 });
           }
         }
-        if (animate) viewer.zoomTo({}, dur);
+        targetSel = {};
       } else if (hs === 'ruvc') {
         if (pdbId === '5F9R') {
           if (state.labelsOn) {
-            viewer.addLabel('RuvC (Pos. 10)', { backgroundColor: '#065f46', fontColor: '#fff', fontSize: 11 }, { chain: 'B', hetflag: false, resi: 10, atom: 'CA' });
-            viewer.addLabel('HNH (Pos. 840)', { backgroundColor: '#065f46', fontColor: '#fff', fontSize: 11 }, { chain: 'B', hetflag: false, resi: 840, atom: 'CA' });
+            viewer.addLabel('RuvC (Asp10)', { backgroundColor: '#065f46', fontColor: '#fff', fontSize: 11 }, { chain: 'B', hetflag: false, resi: 10, atom: 'CA' });
+            viewer.addLabel('HNH (His840)', { backgroundColor: '#065f46', fontColor: '#fff', fontSize: 11 }, { chain: 'B', hetflag: false, resi: 840, atom: 'CA' });
           }
-          if (animate) viewer.zoomTo({ chain: 'B', hetflag: false, resi: [10, 840] }, dur);
+          targetSel = { chain: 'B', hetflag: false, resi: [10, 840] };
+          postZoomFactor = 0.85;
         } else {
           const ruvcSel = { chain: 'A', hetflag: false, resi: [848, 1063, 1213] };
           if (state.labelsOn) {
@@ -2233,46 +2573,83 @@
             viewer.addLabel('Asp1213', { backgroundColor: '#065f46', fontColor: '#ecfdf5', fontSize: 11 }, { chain: 'A', hetflag: false, resi: 1213, atom: 'CA' });
             if (pdbId === '8D4A') viewer.addLabel('2× Mg²⁺', { backgroundColor: '#14532d', fontColor: '#bbf7d0', fontSize: 11 }, { resn: 'MG' });
           }
-          if (animate) viewer.zoomTo(pdbId === '8D4A' ? { or: [ruvcSel, { resn: 'MG' }] } : ruvcSel, dur);
+          // Einheitliche Auswahlgröße in 8D49 und 8D4A für identischen Zoomfaktor
+          targetSel = ruvcSel;
+          postZoomFactor = 0.72;
         }
       } else if (hs === 'clamps') {
         if (pdbId === '5F9R') {
           if (state.labelsOn) viewer.addLabel('Cas9: Geordneter R-Loop ohne Tyrosin-Knick', { backgroundColor: '#1e3a8a', fontColor: '#fff', fontSize: 11 }, { chain: 'C', hetflag: false, resi: 15 });
-          if (animate) viewer.zoomTo({ chain: ['C', 'D'], hetflag: false }, dur);
+          targetSel = { chain: ['C', 'D'], hetflag: false, resi: makeRange(10, 22) };
+          postZoomFactor = 0.88;
         } else {
-          const clampSel = { chain: 'A', hetflag: false, resi: [465, 1069, 1080] };
+          const clampSel = { chain: 'A', hetflag: false, resi: [465, 848, 1063, 1069, 1080, 1213] };
           if (state.labelsOn) {
             viewer.addLabel('Tyr465', { backgroundColor: '#713f12', fontColor: '#fef08a', fontSize: 11 }, { chain: 'A', hetflag: false, resi: 465, atom: 'CA' });
             viewer.addLabel('Tyr1069 (π-Keil)', { backgroundColor: '#713f12', fontColor: '#fef08a', fontSize: 11 }, { chain: 'A', hetflag: false, resi: 1069, atom: 'CA' });
             viewer.addLabel('Tyr1080 (π-Keil)', { backgroundColor: '#713f12', fontColor: '#fef08a', fontSize: 11 }, { chain: 'A', hetflag: false, resi: 1080, atom: 'CA' });
           }
-          if (animate) viewer.zoomTo(pdbId === '8D4A' ? { or: [clampSel, { chain: ['D', 'E', 'G'], hetflag: false }] } : clampSel, dur);
+          // Identische Referenz-Residuen in 8D49 und 8D4A verhindern unterschiedliche Zoomstufen
+          targetSel = clampSel;
+          postZoomFactor = 0.82;
         }
       } else if (hs === 'signal') {
         if (pdbId === '5F9R') {
-          if (state.labelsOn) viewer.addLabel('Cas9 besitzt keine Cas12a2-Insertion-Domäne', { backgroundColor: '#581c87', fontColor: '#fff', fontSize: 11 }, { chain: 'B', hetflag: false, resi: 840, atom: 'CA' });
-          if (animate) viewer.zoomTo({}, dur);
+          if (state.labelsOn) viewer.addLabel('Cas9: Allosterischer HNH-Linker (keine Zn-Insertion)', { backgroundColor: '#581c87', fontColor: '#fff', fontSize: 11 }, { chain: 'B', hetflag: false, resi: 840, atom: 'CA' });
+          targetSel = { chain: 'B', hetflag: false, resi: makeRange(775, 905) };
         } else {
           const sigSel = { chain: 'A', hetflag: false, resi: SIGNAL_DOMAIN_RESI };
           if (state.labelsOn) {
             viewer.addLabel('Signalwandler (AS 938–1030)', { backgroundColor: '#581c87', fontColor: '#f3e8ff', fontSize: 11 }, { chain: 'A', hetflag: false, resi: 980, atom: 'CA' });
             viewer.addLabel('Zn²⁺-Finger', { backgroundColor: '#155e75', fontColor: '#cffafe', fontSize: 11 }, { resn: 'ZN' });
           }
-          if (animate) viewer.zoomTo({ or: [sigSel, { resn: 'ZN' }] }, dur);
+          targetSel = sigSel;
+          postZoomFactor = 0.85;
         }
       } else if (hs === 'rnaduplex') {
         if (pdbId === '5F9R') {
-          if (state.labelsOn) viewer.addLabel('sgRNA : DNA-Zielstrang', { backgroundColor: '#1d4ed8', fontColor: '#fff', fontSize: 11 }, { chain: 'A', hetflag: false, resi: 15 });
-          if (animate) viewer.zoomTo({ chain: ['A', 'C'], hetflag: false }, dur);
+          if (state.labelsOn) viewer.addLabel('sgRNA : DNA-Zielstrang (20 nt)', { backgroundColor: '#1d4ed8', fontColor: '#fff', fontSize: 11 }, { chain: 'A', hetflag: false, resi: 15 });
+          targetSel = { chain: ['A', 'C'], hetflag: false, resi: makeRange(1, 24) };
         } else {
           if (state.labelsOn) {
             viewer.addLabel('crRNA (Kette B)', { backgroundColor: '#1d4ed8', fontColor: '#fff', fontSize: 11 }, { chain: 'B', hetflag: false, resi: 15 });
             if (pdbId !== '8D49') viewer.addLabel('Ziel-mRNA + PFS (Kette C)', { backgroundColor: '#c2410c', fontColor: '#fff', fontSize: 11 }, { chain: 'C', hetflag: false, resi: 18 });
           }
-          if (animate) viewer.zoomTo({ chain: pdbId === '8D49' ? ['B'] : ['B', 'C'], hetflag: false }, dur);
+          targetSel = { chain: 'B', hetflag: false, resi: makeRange(1, 26) };
+          postZoomFactor = 0.82;
         }
       }
+
+      if (updateCamera) {
+        viewer.zoomTo(targetSel, 0);
+        if (postZoomFactor !== 1.0) {
+          viewer.zoom(postZoomFactor, 0);
+        }
+        viewer._baseView = viewer.getView().slice();
+      }
       viewer.render();
+    }
+
+    /** Gleicht im Split-Screen-Modus nach einem Hotspot-Wechsel Sichtwinkel & Zoom-Distanz ab */
+    function harmonizeSplitCameras() {
+      if (state.labViewMode === 'single' || !vLeft || !vRight) return;
+      try {
+        const lv = vLeft.getView();
+        const rv = vRight.getView();
+        if (state.labViewMode === 'split_states') {
+          // 8D49 und 8D4A haben dieselbe Kette A: identischer Sichtwinkel & identische Zoom-Distanz
+          const commonZ = Math.min(lv[3], rv[3]);
+          lv[3] = commonZ;
+          rv[3] = commonZ;
+          rv[4] = lv[4]; rv[5] = lv[5]; rv[6] = lv[6]; rv[7] = lv[7];
+          vLeft.setView(lv);
+          vRight.setView(rv);
+        }
+        vLeft._baseView = vLeft.getView().slice();
+        vRight._baseView = vRight.getView().slice();
+        vLeft.render();
+        vRight.render();
+      } catch (_) {}
     }
 
     async function renderActive3DScene() {
@@ -2321,10 +2698,7 @@
             vRight.resize();
             buildStructureInViewer(vLeft, leftId, txtL);
             buildStructureInViewer(vRight, rightId, txtR);
-            vLeft.zoomTo({}, 0);
-            vRight.zoomTo({}, 0);
-            vLeft.render();
-            vRight.render();
+            harmonizeSplitCameras();
           });
         }
       } catch (err) {
@@ -2416,6 +2790,7 @@
         const leftId = state.labViewMode === 'split_states' ? '8D49' : '5F9R';
         if (vLeft) applyHotspotAndLabels(vLeft, leftId, true);
         if (vRight) applyHotspotAndLabels(vRight, '8D4A', true);
+        harmonizeSplitCameras();
       }
     }
     function toggleVDWSurface() {
